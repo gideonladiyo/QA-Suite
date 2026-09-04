@@ -1,0 +1,73 @@
+:root,
+[data-palette='original'] {
+  color-scheme: light;
+  --color-ink: #403d88;
+  --color-violet: #8b639b;
+  --color-mauve: #af719d;
+  --color-blush: #f8b2b2;
+  --color-page: #fbfafd;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f4f1f7;
+  --color-surface-accent: #f8b2b2;
+  --color-text: #211f32;
+  --color-text-muted: #68657a;
+  --color-text-on-ink: #ffffff;
+  --color-border: #ddd9e7;
+  --color-border-strong: #bdb7cf;
+  --color-primary: #403d88;
+  --color-primary-hover: #353270;
+  --color-on-primary: #ffffff;
+  --color-secondary: #8b639b;
+  --color-accent: #af719d;
+  --color-success: #2e7d5b;
+  --color-warning: #8b5919;
+  --color-danger: #ac394d;
+  --color-on-danger: #ffffff;
+  --color-info: #52629a;
+  --color-focus: #403d88;
+  --color-brand-text: #403d88;
+  --color-brand-muted: #69557b;
+  --color-brand-panel: #f3e6ee;
+  --color-on-blush: #403d88;
+  --color-overlay: rgb(23 22 40 / 40%);
+  --shadow-floating: 0 18px 60px rgb(64 61 136 / 14%);
+  --radius-control: 8px;
+  --radius-panel: 12px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --layer-header: 10;
+  --layer-notification: 30;
+  --duration-fast: 160ms;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --color-page: #171628;
+  --color-surface: #211f35;
+  --color-surface-subtle: #2b2942;
+  --color-surface-accent: #5d3f64;
+  --color-text: #f7f4fb;
+  --color-text-muted: #c4bed1;
+  --color-border: #47425e;
+  --color-border-strong: #68607f;
+  --color-primary: #aaa5ee;
+  --color-primary-hover: #c2bef7;
+  --color-on-primary: #171628;
+  --color-secondary: #c19bca;
+  --color-accent: #e0a8c0;
+  --color-success: #74c69d;
+  --color-warning: #e4b46b;
+  --color-danger: #f29baa;
+  --color-on-danger: #171628;
+  --color-info: #aeb8ef;
+  --color-focus: #f8b2b2;
+  --color-brand-text: #ece0f5;
+  --color-brand-muted: #c4accf;
+  --color-brand-panel: #332b47;
+  --color-overlay: rgb(12 10 24 / 65%);
+  --shadow-floating: 0 18px 60px rgb(12 10 24 / 35%);
+}

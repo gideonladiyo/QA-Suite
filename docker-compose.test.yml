@@ -1,0 +1,28 @@
+name: qa-portal-tests
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: qa_test
+      POSTGRES_PASSWORD: test_dummy_password_not_for_deployment
+      POSTGRES_DB: qa_portal_test
+    tmpfs: /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qa_test -d qa_portal_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+  tests:
+    build:
+      context: ./backend
+      target: test
+    environment:
+      APP_SECRET_KEY: test_dummy_signing_secret_not_for_deployment
+      POSTGRES_USER: qa_test
+      POSTGRES_PASSWORD: test_dummy_password_not_for_deployment
+      POSTGRES_DB: qa_portal_test
+      POSTGRES_HOST: db
+      ALLOWED_ORIGINS: http://testserver
+    depends_on:
+      db:
+        condition: service_healthy
