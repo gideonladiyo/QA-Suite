@@ -16,7 +16,7 @@ function toggleTheme(): void {
 }
 const loading = ref(true)
 const error = ref('')
-const expired = computed(() => auth.everAuthenticated && !auth.authenticated)
+const expired = computed(() => !auth.authDisabled && auth.everAuthenticated && !auth.authenticated)
 async function check(): Promise<void> {
   loading.value = true
   error.value = ''
@@ -38,7 +38,7 @@ onMounted(() => {
 onUnmounted(() => window.removeEventListener('qa:session-expired', expire))
 </script>
 <template>
-  <template v-if="auth.everAuthenticated">
+  <template v-if="auth.authDisabled || auth.everAuthenticated">
     <slot />
     <UiModal
       :model-value="expired"

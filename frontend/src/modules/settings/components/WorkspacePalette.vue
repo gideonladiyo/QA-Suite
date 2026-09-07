@@ -4,18 +4,31 @@ import { useUiStore } from '../../../shared/stores/ui'
 import {
   defaultPalette,
   importPalette,
+  loadSavedPalettes,
   normalizeHex,
   normalizePalette,
   palettePresets,
   paletteRoles,
   paletteTokens,
+  savedPalettesLimit,
   samePalette,
+  storeSavedPalettes,
   type Palette,
+  type SavedPalette,
 } from '../../../shared/palettes'
 import UiButton from '../../../shared/components/ui/UiButton.vue'
 import UiCard from '../../../shared/components/ui/UiCard.vue'
 import UiInput from '../../../shared/components/ui/UiInput.vue'
 import UiTextarea from '../../../shared/components/ui/UiTextarea.vue'
+import UiConfirmDialog from '../../../shared/components/ui/UiConfirmDialog.vue'
+import UiModal from '../../../shared/components/ui/UiModal.vue'
+
+const savedPaletteRoles = [
+  { key: 'ink', label: 'Primary', hint: 'Tombol utama dan navigasi aktif.' },
+  { key: 'violet', label: 'Secondary', hint: 'Penanda dan elemen pendukung.' },
+  { key: 'mauve', label: 'Accent', hint: 'Penekanan tambahan.' },
+  { key: 'blush', label: 'Highlight', hint: 'Sorotan dan permukaan lembut.' },
+] as const
 
 const ui = useUiStore()
 const draft = ref<Palette>({ ...(ui.colorPalette ?? defaultPalette) })
@@ -24,6 +37,18 @@ const importError = ref('')
 const feedback = ref('')
 const submitted = ref(false)
 const customSection = ref<HTMLDetailsElement>()
+const savedPalettes = ref(loadSavedPalettes())
+const editorOpen = ref(false)
+const editorId = ref<string | null>(null)
+const editorName = ref('')
+const editorDraft = ref<Palette>({ ...defaultPalette })
+const editorSubmitted = ref(false)
+const editorNameError = ref('')
+const editorError = ref('')
+const editorForm = ref<HTMLFormElement>()
+const libraryError = ref('')
+const libraryFeedback = ref('')
+const deleteTarget = ref<SavedPalette | null>(null)
 const normalized = computed(() => normalizePalette(draft.value))
 const isOriginal = computed(() => normalized.value && samePalette(normalized.value, defaultPalette))
 const previewStyle = computed(() =>
@@ -37,15 +62,92 @@ const previewStyle = computed(() =>
 const dirty = computed(
   () => !normalized.value || !samePalette(normalized.value, ui.colorPalette ?? defaultPalette),
 )
-const activeName = computed(
-  () =>
-    palettePresets.find((preset) => samePalette(preset.colors, ui.colorPalette ?? defaultPalette))
-      ?.name ?? 'Custom',
-)
+const activeName = computed(() => {
+  const active = ui.colorPalette ?? defaultPalette
+  return (
+    palettePresets.find((preset) => samePalette(preset.colors, active))?.name ??
+    savedPalettes.value.find((palette) => samePalette(palette.colors, active))?.name ??
+    'Custom'
+  )
+})
 function choose(colors: Palette): void {
   draft.value = { ...colors }
   submitted.value = false
   feedback.value = ''
+  libraryError.value = ''
+  libraryFeedback.value = ''
+}
+function previewSaved(palette: SavedPalette): void {
+  choose(palette.colors)
+  libraryFeedback.value = `${palette.name} dimuat ke preview. Klik Terapkan palet untuk mengaktifkannya.`
+}
+function openPaletteEditor(palette?: SavedPalette): void {
+  editorId.value = palette?.id ?? null
+  editorName.value = palette?.name ?? ''
+  editorDraft.value = { ...(palette?.colors ?? normalized.value ?? defaultPalette) }
+  editorSubmitted.value = false
+  editorNameError.value = ''
+  editorError.value = ''
+  editorOpen.value = true
+}
+function savePalette(): void {
+  editorSubmitted.value = true
+  const name = editorName.value.trim()
+  const colors = normalizePalette(editorDraft.value)
+  editorNameError.value = ''
+  editorError.value = ''
+  if (!name) {
+    editorNameError.value = 'Isi nama palet sebelum menyimpan.'
+    return
+  }
+  if (!colors) {
+    editorError.value = 'Periksa keempat kode HEX sebelum menyimpan.'
+    void nextTick(() =>
+      editorForm.value?.querySelector<HTMLInputElement>('[aria-invalid="true"]')?.focus(),
+    )
+    return
+  }
+  const duplicate = savedPalettes.value.find(
+    (palette) =>
+      palette.id !== editorId.value &&
+      palette.name.toLocaleLowerCase('id-ID') === name.toLocaleLowerCase('id-ID'),
+  )
+  if (duplicate) {
+    editorNameError.value = 'Nama palet sudah digunakan. Pilih nama lain.'
+    return
+  }
+  if (!editorId.value && savedPalettes.value.length >= savedPalettesLimit) {
+    editorError.value = `Maksimal ${savedPalettesLimit} palet tersimpan. Hapus satu palet terlebih dahulu.`
+    return
+  }
+  const id =
+    editorId.value ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+  const updating = !!editorId.value
+  const saved = { id, name, colors: { ...colors } }
+  const next = updating
+    ? savedPalettes.value.map((palette) => (palette.id === id ? saved : palette))
+    : [...savedPalettes.value, saved]
+  if (!storeSavedPalettes(next)) {
+    editorError.value = 'Browser tidak mengizinkan penyimpanan palet.'
+    return
+  }
+  savedPalettes.value = next
+  editorOpen.value = false
+  libraryFeedback.value = `${name} ${updating ? 'diperbarui' : 'disimpan'}.`
+}
+function deleteSaved(): void {
+  if (!deleteTarget.value) return
+  const target = deleteTarget.value
+  const next = savedPalettes.value.filter((palette) => palette.id !== target.id)
+  if (!storeSavedPalettes(next)) {
+    libraryError.value = 'Browser tidak mengizinkan perubahan palet tersimpan.'
+    deleteTarget.value = null
+    return
+  }
+  savedPalettes.value = next
+  libraryFeedback.value = `${target.name} dihapus dari browser ini.`
+  libraryError.value = ''
+  deleteTarget.value = null
 }
 function loadImport(): void {
   try {
@@ -256,10 +358,181 @@ watch(
         {{ ui.colorPaletteError }}
       </p>
     </form>
+    <section
+      class="saved-palettes stack"
+      aria-labelledby="saved-palettes-heading"
+    >
+      <div class="saved-palettes-header">
+        <div>
+          <h3 id="saved-palettes-heading">Palet tersimpan</h3>
+          <p class="small muted mt-2">
+            Buat beberapa identitas warna dan gunakan kembali kapan saja.
+          </p>
+        </div>
+        <UiButton @click="openPaletteEditor()">Tambah palet</UiButton>
+      </div>
+      <p
+        v-if="libraryError"
+        class="field-error"
+        role="alert"
+      >
+        {{ libraryError }}
+      </p>
+      <p
+        v-if="libraryFeedback"
+        class="small muted"
+        role="status"
+      >
+        {{ libraryFeedback }}
+      </p>
+      <p
+        v-if="savedPalettes.length === 0"
+        class="saved-empty small muted"
+      >
+        Belum ada palet tersimpan. Klik Tambah palet untuk membuat palet pertama.
+      </p>
+      <ul
+        v-else
+        class="saved-palette-list"
+        aria-label="Daftar palet tersimpan"
+      >
+        <li
+          v-for="palette in savedPalettes"
+          :key="palette.id"
+          class="saved-palette-row"
+        >
+          <div class="saved-palette-identity">
+            <span
+              class="saved-palette-colors"
+              aria-hidden="true"
+            >
+              <span
+                v-for="{ key } in paletteRoles"
+                :key="key"
+                :style="{ backgroundColor: palette.colors[key] }"
+              />
+            </span>
+            <strong>{{ palette.name }}</strong>
+          </div>
+          <div class="saved-palette-actions">
+            <UiButton
+              size="sm"
+              variant="secondary"
+              :aria-label="`Gunakan palet ${palette.name}`"
+              @click="previewSaved(palette)"
+            >
+              Gunakan
+            </UiButton>
+            <UiButton
+              size="sm"
+              variant="ghost"
+              :aria-label="`Edit palet ${palette.name}`"
+              @click="openPaletteEditor(palette)"
+            >
+              Edit
+            </UiButton>
+            <UiButton
+              size="sm"
+              variant="danger"
+              :aria-label="`Hapus palet ${palette.name}`"
+              @click="deleteTarget = palette"
+            >
+              Hapus
+            </UiButton>
+          </div>
+        </li>
+      </ul>
+    </section>
     <p class="small muted">
-      Palet tersimpan hanya di browser ini, bukan database. Pilih Portal original lalu Terapkan
-      palet untuk kembali ke warna awal. Warna status sukses, peringatan, dan error tidak diubah.
+      Palet aktif dan daftar palet tersimpan hanya ada di browser ini, bukan database. Pilih Portal
+      original lalu Terapkan palet untuk kembali ke warna awal. Warna status sukses, peringatan, dan
+      error tidak diubah.
     </p>
+    <UiModal
+      v-model="editorOpen"
+      :title="editorId ? 'Edit palet' : 'Tambah palet'"
+      description="Isi nama dan empat warna identitas workspace."
+      size="md"
+    >
+      <form
+        id="saved-palette-editor-form"
+        ref="editorForm"
+        class="stack palette-editor-form"
+        novalidate
+        @submit.prevent="savePalette"
+      >
+        <UiInput
+          v-model="editorName"
+          label="Nama palet"
+          maxlength="60"
+          :error="editorNameError || undefined"
+          placeholder="Contoh: Brand marketing"
+          autocomplete="off"
+          autofocus
+        />
+        <div class="palette-fields">
+          <div
+            v-for="role in savedPaletteRoles"
+            :key="role.key"
+            class="palette-color-field"
+          >
+            <input
+              type="color"
+              class="color-picker"
+              :aria-label="`Pilih warna ${role.label}`"
+              :value="normalizeHex(editorDraft[role.key]) ?? defaultPalette[role.key]"
+              @input="editorDraft[role.key] = ($event.target as HTMLInputElement).value"
+            />
+            <UiInput
+              v-model="editorDraft[role.key]"
+              :label="role.label"
+              :hint="role.hint"
+              maxlength="7"
+              :error="
+                editorSubmitted && !normalizeHex(editorDraft[role.key])
+                  ? 'Gunakan HEX, misalnya #1565C0.'
+                  : undefined
+              "
+              spellcheck="false"
+              autocomplete="off"
+            />
+          </div>
+        </div>
+        <p
+          v-if="editorError"
+          class="field-error"
+          role="alert"
+        >
+          {{ editorError }}
+        </p>
+      </form>
+      <template #footer>
+        <UiButton
+          variant="secondary"
+          @click="editorOpen = false"
+        >
+          Batal
+        </UiButton>
+        <UiButton
+          type="submit"
+          form="saved-palette-editor-form"
+        >
+          {{ editorId ? 'Simpan perubahan' : 'Simpan palet' }}
+        </UiButton>
+      </template>
+    </UiModal>
+    <UiConfirmDialog
+      :model-value="!!deleteTarget"
+      title="Hapus palet tersimpan?"
+      :description="
+        deleteTarget
+          ? `${deleteTarget.name} akan dihapus dari browser ini. Palet yang sedang aktif tidak berubah.`
+          : ''
+      "
+      confirm-label="Hapus palet"
+      @update:model-value="(open) => !open && (deleteTarget = null)"
+      @confirm="deleteSaved"
+    />
   </section>
 </template>
 
@@ -372,6 +645,61 @@ watch(
   gap: 12px;
   flex-wrap: wrap;
 }
+.saved-palettes {
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-border);
+}
+.saved-palettes h3 {
+  font-size: 18px;
+}
+.saved-palettes-header,
+.saved-palette-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.palette-editor-form {
+  gap: 20px;
+}
+.saved-empty {
+  padding: 20px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-panel);
+}
+.saved-palette-list {
+  list-style: none;
+  padding: 0;
+  border-top: 1px solid var(--color-border);
+}
+.saved-palette-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.saved-palette-identity {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.saved-palette-identity strong {
+  overflow-wrap: anywhere;
+}
+.saved-palette-colors {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  height: 28px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
 @media (max-width: 600px) {
   .palette-presets {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -381,6 +709,10 @@ watch(
   }
   .palette-preview {
     padding: 20px;
+  }
+  .saved-palette-row {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 </style>

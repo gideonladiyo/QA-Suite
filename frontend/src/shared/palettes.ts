@@ -5,6 +5,13 @@ export const paletteRoles = [
   { key: 'blush', label: 'Highlight', hint: 'Sorotan dan permukaan lembut.' },
 ] as const
 export type Palette = Record<(typeof paletteRoles)[number]['key'], string>
+export interface SavedPalette {
+  id: string
+  name: string
+  colors: Palette
+}
+export const savedPalettesStorageKey = 'qa-portal:saved-color-palettes'
+export const savedPalettesLimit = 20
 export const defaultPalette: Palette = {
   ink: '#403d88',
   violet: '#8b639b',
@@ -50,6 +57,41 @@ export function normalizePalette(value: unknown): Palette | null {
 }
 export function samePalette(a: Palette, b: Palette): boolean {
   return paletteRoles.every(({ key }) => a[key] === b[key])
+}
+export function loadSavedPalettes(
+  storage: Pick<Storage, 'getItem'> = localStorage,
+): SavedPalette[] {
+  try {
+    const parsed: unknown = JSON.parse(storage.getItem(savedPalettesStorageKey) ?? '[]')
+    if (!Array.isArray(parsed)) return []
+    const ids = new Set<string>()
+    const names = new Set<string>()
+    return parsed.slice(0, savedPalettesLimit).flatMap((value) => {
+      if (!value || typeof value !== 'object') return []
+      const candidate = value as Record<string, unknown>
+      const id = typeof candidate.id === 'string' ? candidate.id.trim().slice(0, 100) : ''
+      const name = typeof candidate.name === 'string' ? candidate.name.trim().slice(0, 60) : ''
+      const colors = normalizePalette(candidate.colors)
+      const normalizedName = name.toLocaleLowerCase('id-ID')
+      if (!id || !name || !colors || ids.has(id) || names.has(normalizedName)) return []
+      ids.add(id)
+      names.add(normalizedName)
+      return [{ id, name, colors }]
+    })
+  } catch {
+    return []
+  }
+}
+export function storeSavedPalettes(
+  palettes: SavedPalette[],
+  storage: Pick<Storage, 'setItem'> = localStorage,
+): boolean {
+  try {
+    storage.setItem(savedPalettesStorageKey, JSON.stringify(palettes.slice(0, savedPalettesLimit)))
+    return true
+  } catch {
+    return false
+  }
 }
 function rgb(hex: string): number[] {
   return [1, 3, 5].map((offset) => parseInt(hex.slice(offset, offset + 2), 16))

@@ -5,10 +5,13 @@ import {
   contrast,
   defaultPalette,
   importPalette,
+  loadSavedPalettes,
   normalizeHex,
   normalizePalette,
   palettePresets,
   paletteTokens,
+  savedPalettesStorageKey,
+  storeSavedPalettes,
 } from '../../shared/palettes'
 import { useUiStore } from '../../shared/stores/ui'
 import WorkspacePalette from './components/WorkspacePalette.vue'
@@ -58,6 +61,26 @@ describe('workspace color palettes', () => {
     ])
       expect(() => importPalette(input)).toThrow()
     expect(fetch).not.toHaveBeenCalled()
+  })
+  it('validates saved palettes from local storage and safely handles blocked writes', () => {
+    localStorage.setItem(
+      savedPalettesStorageKey,
+      JSON.stringify([
+        { id: 'ocean', name: ' Ocean ', colors: ocean },
+        { id: 'duplicate-name', name: 'ocean', colors: defaultPalette },
+        { id: 'invalid', name: 'Broken', colors: { ...ocean, ink: 'red' } },
+      ]),
+    )
+    expect(loadSavedPalettes()).toEqual([{ id: 'ocean', name: 'Ocean', colors: ocean }])
+    localStorage.setItem(savedPalettesStorageKey, '{broken')
+    expect(loadSavedPalettes()).toEqual([])
+    expect(
+      storeSavedPalettes([], {
+        setItem: () => {
+          throw new Error('blocked')
+        },
+      }),
+    ).toBe(false)
   })
   it('keeps text, buttons, highlights and brand marks readable in both modes, even with extreme input', () => {
     const palettes = [
@@ -202,5 +225,63 @@ describe('workspace color palettes', () => {
     await input('Utama').setValue('#123456')
     await wrapper.get('form').trigger('submit')
     expect(useUiStore().colorPalette?.ink).toBe('#123456')
+  })
+  it('adds, previews, edits and deletes named palettes without applying them automatically', async () => {
+    const wrapper = mount(WorkspacePalette, {
+      attachTo: document.body,
+      global: { plugins: [createPinia()] },
+    })
+    const button = (label: string) =>
+      wrapper.findAll('button').find((item) => item.text().includes(label))!
+    await button('Ocean').trigger('click')
+    await button('Tambah palet').trigger('click')
+    const field = (label: string) =>
+      wrapper
+        .findAllComponents(UiInput)
+        .find((input) => input.props('label') === label)!
+        .get('input')
+    const name = field('Nama palet')
+    const submitEditor = () =>
+      document
+        .querySelector<HTMLFormElement>('#saved-palette-editor-form')!
+        .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+    await name.setValue('Brand QA')
+    await field('Primary').setValue('#123456')
+    submitEditor()
+    await flushPromises()
+    expect(useUiStore().colorPalette).toBeNull()
+    expect(loadSavedPalettes()).toEqual([
+      { id: expect.any(String), name: 'Brand QA', colors: { ...ocean, ink: '#123456' } },
+    ])
+    expect(wrapper.text()).toContain('Brand QA disimpan')
+
+    await button('Portal original').trigger('click')
+    await wrapper.get('[aria-label="Gunakan palet Brand QA"]').trigger('click')
+    expect(useUiStore().colorPalette).toBeNull()
+    expect(wrapper.get('[aria-label="Preview palet"]').attributes('data-palette')).toBeUndefined()
+
+    await wrapper.get('[aria-label="Edit palet Brand QA"]').trigger('click')
+    await field('Nama palet').setValue('Brand Produk')
+    submitEditor()
+    await flushPromises()
+    expect(loadSavedPalettes()).toEqual([
+      {
+        id: expect.any(String),
+        name: 'Brand Produk',
+        colors: { ...ocean, ink: '#123456' },
+      },
+    ])
+    expect(wrapper.text()).toContain('Brand Produk diperbarui')
+
+    await wrapper.get('[aria-label="Hapus palet Brand Produk"]').trigger('click')
+    await flushPromises()
+    const confirm = [...document.body.querySelectorAll('button')].find(
+      (item) => item.textContent?.trim() === 'Hapus palet',
+    ) as HTMLButtonElement
+    confirm.click()
+    await flushPromises()
+    expect(loadSavedPalettes()).toEqual([])
+    expect(wrapper.text()).toContain('Belum ada palet tersimpan')
+    wrapper.unmount()
   })
 })

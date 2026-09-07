@@ -26,7 +26,7 @@ docker compose up --build -d
 docker compose ps
 ```
 
-Buka [QA Portal](http://localhost:8080), lalu buat akun lokal pertama dengan username dan password pilihanmu (12–128 karakter). Akun ini untuk satu workspace; belum ada pemulihan password otomatis. Script setup menghasilkan secret aplikasi/database acak di `.env`, tidak mencetak nilainya, dan tidak menimpa file yang sudah ada. Python 3.11+ cukup untuk script setup; backend memakai Python 3.12 di container.
+Buka [QA Portal](http://localhost:8080). Pada `APP_ENV=local` (konfigurasi bawaan), login dinonaktifkan agar workspace lokal tidak terkunci karena lupa password. Environment selain `local` tetap meminta akun lokal. Script setup menghasilkan secret aplikasi/database acak di `.env`, tidak mencetak nilainya, dan tidak menimpa file yang sudah ada. Python 3.11+ cukup untuk script setup; backend memakai Python 3.12 di container.
 
 Port hanya dipublikasikan ke loopback host. Nginx dan backend berjalan sebagai pengguna non-root. Routing SPA tetap bekerja saat membuka URL langsung atau refresh halaman. PostgreSQL dan backend tidak membuka port ke host. Jangan membagikan `.env` atau mempublikasikan port ke jaringan umum.
 
@@ -84,7 +84,7 @@ Bagian **Sesuaikan warna atau impor palet** menyediakan color picker dan kode HE
 
 Preset tambahan memakai kombinasi swatch dari [Material Design 2014](https://m2.material.io/design/color/the-color-system.html), bukan implementasi penuh tema Material. Palet awal berasal dari [Color Hunt](https://colorhunt.co/palette/f8b2b2af719d8b639b403d88). Warna dasar dipertahankan dalam preferensi; turunannya disesuaikan untuk keterbacaan teks/tombol di mode terang maupun gelap. Warna status sukses, peringatan, dan error tetap terpisah.
 
-Palet disimpan di localStorage browser ini (`qa-portal:color-palette`), bukan PostgreSQL atau backup laporan. Tema terang/gelap tetap pengaturan terpisah. Jika penyimpanan ditolak browser, palet masih berlaku selama sesi dengan peringatan. Pilih **Portal original → Terapkan palet** untuk menghapus override dan kembali ke token CSS asli. Tidak memerlukan migrasi database atau dependensi baru.
+Palet aktif disimpan di localStorage browser ini (`qa-portal:color-palette`), bukan PostgreSQL atau backup laporan. Bagian **Palet tersimpan** dapat menyimpan hingga 20 palet bernama di `qa-portal:saved-color-palettes`. Klik **Tambah palet**, lalu isi nama serta kode HEX Primary, Secondary, Accent, dan Highlight. Palet dapat dimuat ke preview, diedit lewat form yang sama, atau dihapus tanpa mengubah warna aktif sampai **Terapkan palet** diklik. Tema terang/gelap tetap pengaturan terpisah. Jika penyimpanan ditolak browser, palet aktif masih berlaku selama sesi dengan peringatan, sedangkan daftar palet tidak diubah. Pilih **Portal original → Terapkan palet** untuk menghapus override dan kembali ke token CSS asli. Tidak memerlukan migrasi database atau dependensi baru.
 
 ## Pemakaian QA Reports
 

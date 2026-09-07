@@ -1,5 +1,7 @@
 import httpx
 
+from app.core.config import get_settings
+
 CREDENTIALS = {"username": "qa_test", "password": "test_dummy_password_only"}
 
 
@@ -37,3 +39,21 @@ async def test_password_validation_redaction_and_lockout(client: httpx.AsyncClie
         )
         assert response.status_code == 401 and "wrong_test_password" not in response.text
     assert (await client.post("/api/auth/login", json=CREDENTIALS)).status_code == 429
+
+
+async def test_local_env_bypasses_portal_login(client: httpx.AsyncClient) -> None:
+    settings = get_settings()
+    previous_env = settings.app_env
+    settings.app_env = "local"
+    try:
+        status = await client.get("/api/auth/status")
+        assert status.json() == {
+            "setup_required": False,
+            "authenticated": True,
+            "username": "local",
+            "auth_disabled": True,
+        }
+        assert (await client.get("/api/qa-reports")).status_code == 200
+        assert (await client.post("/api/auth/login", json=CREDENTIALS)).status_code == 404
+    finally:
+        settings.app_env = previous_env

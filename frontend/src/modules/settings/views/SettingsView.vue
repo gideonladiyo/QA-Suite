@@ -49,7 +49,10 @@ const themes: { value: ThemePreference; label: string; description: string; icon
     </div>
   </div>
   <div class="settings-content">
-    <section class="mb-8 stack">
+    <section
+      v-if="!auth.authDisabled"
+      class="mb-8 stack"
+    >
       <div>
         <h2>Akun lokal</h2>
         <p class="muted small mt-2">

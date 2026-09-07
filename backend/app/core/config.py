@@ -7,6 +7,7 @@ from sqlalchemy import URL
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", hide_input_in_errors=True)
+    app_env: str = "production"
     app_secret_key: SecretStr
     postgres_user: str = "qa_portal"
     postgres_password: SecretStr

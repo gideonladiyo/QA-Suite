@@ -117,10 +117,10 @@ Rules:
 
 ### Workspace palette customization
 
-- Settings → Identitas workspace owns palette presets, four seed colors (Utama/ink, Sekunder/violet, Aksen/mauve, Highlight/blush), native color pickers, HEX entry, and a collapsed import panel. Choosing/editing only changes the preview; Terapkan palet commits to browser-local preferences. Cancel restores the active palette.
+- Settings → Identitas workspace owns palette presets, four seed colors (Utama/ink, Sekunder/violet, Aksen/mauve, Highlight/blush), native color pickers, HEX entry, a collapsed import panel, and a browser-local saved-palette library. The saved-palette list has a clear Tambah palet action; add/edit opens one focused form for Name, Primary, Secondary, Accent, and Highlight. Choosing/editing only changes the preview; Terapkan palet commits to browser-local preferences. Saved palettes can be previewed and deleted without changing the active palette until the user applies one. Cancel restores the active palette.
 - `shared/palettes.ts` normalizes HEX values and maps seed colors to semantic CSS tokens. Extra presets combine Material 2014 swatches; they are not complete Material themes. Surface/text/brand roles adapt together in light/dark modes. Contrast checks cover small text, primary buttons (including hover), highlights, and the sidebar mark. Status success/warning/danger/info remain unchanged.
 - Arbitrary HTML/CSS/themes are never imported. Accept exactly four HEX colors or recognized Color Hunt/Coolors palette URLs containing four colors; parse locally, sort dark-to-light, allow role editing, and never fetch the supplied URL.
-- Original is the unchanged CSS baseline. `[data-palette='original']` scopes that baseline to the preview even when another palette is active; resetting removes root token overrides. Presets and custom colors persist in `qa-portal:color-palette`, separately from the light/dark/system preference. No DB changes.
+- Original is the unchanged CSS baseline. `[data-palette='original']` scopes that baseline to the preview even when another palette is active; resetting removes root token overrides. The active palette persists in `qa-portal:color-palette`; named palettes use `qa-portal:saved-color-palettes`, separately from the light/dark/system preference. No DB changes.
 - Use shared cards/buttons/inputs and existing spacing. Preset selection has text plus aria-pressed, invalid HEX opens and focuses the relevant field, and controls stack on small screens. Do not apply raw seed colors directly to body text or buttons.
 
 ## Typography

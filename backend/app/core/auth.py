@@ -25,6 +25,7 @@ from app.core.security import (
 
 Db = Annotated[AsyncSession, Depends(get_db)]
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+LOCAL_USERNAME = "local"
 
 
 class Credentials(BaseModel):
@@ -43,6 +44,15 @@ class AuthState(BaseModel):
     setup_required: bool = False
     authenticated: bool = False
     username: str | None = None
+    auth_disabled: bool = False
+
+
+def auth_disabled() -> bool:
+    return get_settings().app_env.lower() == "local"
+
+
+def local_user() -> LocalAccount:
+    return LocalAccount(id=1, username=LOCAL_USERNAME, password_hash="")
 
 
 async def session_account(request: Request, db: AsyncSession) -> LocalAccount | None:
@@ -61,6 +71,8 @@ async def session_account(request: Request, db: AsyncSession) -> LocalAccount | 
 
 
 async def require_user(request: Request, db: Db) -> LocalAccount:
+    if auth_disabled():
+        return local_user()
     account = await session_account(request, db)
     if account is None:
         raise AppError(401, "Sesi berakhir. Masuk kembali untuk melanjutkan.")
@@ -101,6 +113,8 @@ async def issue_session(db: AsyncSession, response: Response, request: Request) 
 
 @router.get("/status")
 async def status(request: Request, db: Db) -> AuthState:
+    if auth_disabled():
+        return AuthState(auth_disabled=True, authenticated=True, username=LOCAL_USERNAME)
     account = await session_account(request, db)
     exists = await db.get(LocalAccount, 1)
     return AuthState(
@@ -112,6 +126,8 @@ async def status(request: Request, db: Db) -> AuthState:
 
 @router.post("/setup", status_code=201)
 async def setup(body: Credentials, request: Request, response: Response, db: Db) -> AuthState:
+    if auth_disabled():
+        raise AppError(404, "Login dinonaktifkan di local env.")
     if await db.get(LocalAccount, 1):
         raise AppError(409, "Akun lokal sudah disiapkan. Silakan masuk.")
     hashed = await asyncio.to_thread(password_hash, body.password.get_secret_value())
@@ -127,6 +143,8 @@ async def setup(body: Credentials, request: Request, response: Response, db: Db)
 
 @router.post("/login")
 async def login(body: Credentials, request: Request, response: Response, db: Db) -> AuthState:
+    if auth_disabled():
+        raise AppError(404, "Login dinonaktifkan di local env.")
     account = await db.scalar(select(LocalAccount).where(LocalAccount.id == 1).with_for_update())
     if account is None:
         raise AppError(409, "Buat akun lokal terlebih dahulu.")
