@@ -15,6 +15,7 @@ from app.core.errors import AppError
 from app.modules.qa_reports.models import DailyReport, ReportItem, ReportItemLink, ReportTemplate
 from app.modules.qa_reports.schemas import (
     CountGroup,
+    CsvPreviewRow,
     DayCount,
     ItemInput,
     MonthlyMetrics,
@@ -516,19 +517,42 @@ async def monthly_metrics(db: AsyncSession, month: str) -> MonthlyMetrics:
 
 def csv_cell(value: str | None) -> str:
     text = value or ""
-    return "'" + text if text.lstrip().startswith(("=", "+", "-", "@", "\t", "\r", "\n")) else text
+    stripped = text.lstrip()
+    dangerous = stripped.startswith(("=", "+", "@")) or (
+        stripped.startswith("-") and stripped[1:2].isdigit()
+    )
+    return "'" + text if dangerous else text
 
 
-async def export_csv(db: AsyncSession, month: str) -> str:
+async def monthly_csv_rows(db: AsyncSession, month: str) -> list[CsvPreviewRow]:
     start, end = month_bounds(month)
     reports = (
         await db.scalars(
             select(DailyReport)
             .where(DailyReport.report_date.between(start, end))
             .options(selectinload(DailyReport.items).selectinload(ReportItem.links))
-            .order_by(DailyReport.report_date, DailyReport.id)
+            .order_by(DailyReport.report_date.desc(), DailyReport.id)
         )
     ).all()
+    return [
+        CsvPreviewRow(
+            row_id=f"{report.id}:{item.id}",
+            date=report.report_date,
+            title=report.title,
+            activity=item.activity_code,
+            environment=item.environment,
+            result=item.result,
+            current_status=item.current_status or "",
+            current_issue=item.current_issue or "",
+            coverage_links="\n".join(link.url for link in item.links),
+        )
+        for report in reports
+        for item in report.items
+    ]
+
+
+async def export_csv(db: AsyncSession, month: str) -> str:
+    rows = await monthly_csv_rows(db, month)
     output = io.StringIO(newline="")
     writer = csv.writer(output)
     writer.writerow(
@@ -543,23 +567,22 @@ async def export_csv(db: AsyncSession, month: str) -> str:
             "Coverage links",
         ]
     )
-    for report in reports:
-        for item in report.items:
-            writer.writerow(
-                [
-                    str(report.report_date),
-                    *map(
-                        csv_cell,
-                        [
-                            report.title,
-                            item.activity_code,
-                            item.environment,
-                            item.result,
-                            item.current_status,
-                            item.current_issue,
-                            "\n".join(link.url for link in item.links),
-                        ],
-                    ),
-                ]
-            )
+    for row in rows:
+        writer.writerow(
+            [
+                str(row.date),
+                *map(
+                    csv_cell,
+                    [
+                        row.title,
+                        row.activity,
+                        row.environment,
+                        row.result,
+                        row.current_status,
+                        row.current_issue,
+                        row.coverage_links,
+                    ],
+                ),
+            ]
+        )
     return "\ufeff" + output.getvalue()

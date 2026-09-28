@@ -439,11 +439,11 @@ describe('QA reports', () => {
     expect(input.element.value).toBe('QA-42')
   })
 
-  it('opens the list first, requests ascending server order, and navigates to a separate new form', async () => {
+  it('opens the list newest first and navigates to a separate new form', async () => {
     const list = vi.spyOn(qaApi, 'list').mockResolvedValue({
       reports: [
-        { ...fixture, id: 'old', report_date: '2026-09-01', title: 'Old report', item_count: 1 },
         { ...fixture, id: 'new', report_date: '2026-09-02', title: 'New report', item_count: 1 },
+        { ...fixture, id: 'old', report_date: '2026-09-01', title: 'Old report', item_count: 1 },
       ],
       total: 2,
       page: 1,
@@ -459,10 +459,10 @@ describe('QA reports', () => {
       global: { plugins: [router, pinia] },
     })
     await flushPromises()
-    expect(list).toHaveBeenCalledWith({ page: '1', order: 'asc' })
+    expect(list).toHaveBeenCalledWith({ page: '1', order: 'desc' })
     expect(wrapper.findAll('tbody tr').map((row) => row.text())).toEqual([
-      expect.stringContaining('Old report'),
       expect.stringContaining('New report'),
+      expect.stringContaining('Old report'),
     ])
     expect(wrapper.find('fieldset.activity-editor').exists()).toBe(false)
     expect(wrapper.text()).toContain('Tersimpan')

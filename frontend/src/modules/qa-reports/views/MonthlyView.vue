@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { qaApi, localDate, type Metrics } from '../api'
+import { qaApi, localDate, type CsvPreviewRow, type Metrics } from '../api'
 import { downloadFile, errorMessage } from '../../../shared/api'
 import UiButton from '../../../shared/components/ui/UiButton.vue'
 import UiBreadcrumbs from '../../../shared/components/ui/UiBreadcrumbs.vue'
@@ -13,11 +13,22 @@ import UiDataTable from '../../../shared/components/ui/UiDataTable.vue'
 import '../styles.css'
 const month = ref(localDate().slice(0, 7))
 const data = ref<Metrics>()
+const csvRows = ref<CsvPreviewRow[]>([])
 const error = ref('')
 const exportError = ref('')
 const loading = ref(false)
 const exporting = ref(false)
 const peak = computed(() => Math.max(1, ...(data.value?.trend.map((day) => day.count) ?? [])))
+const csvColumns: { key: keyof CsvPreviewRow; label: string }[] = [
+  { key: 'date', label: 'Tanggal' },
+  { key: 'title', label: 'Laporan' },
+  { key: 'activity', label: 'Aktivitas' },
+  { key: 'environment', label: 'Environment' },
+  { key: 'result', label: 'Hasil' },
+  { key: 'current_status', label: 'Status saat ini' },
+  { key: 'current_issue', label: 'Issue saat ini' },
+  { key: 'coverage_links', label: 'Coverage links' },
+]
 let request = 0
 async function load(): Promise<void> {
   const current = ++request
@@ -25,8 +36,14 @@ async function load(): Promise<void> {
   error.value = ''
   exportError.value = ''
   try {
-    const result = await qaApi.metrics(month.value)
-    if (current === request) data.value = result
+    const [result, rows] = await Promise.all([
+      qaApi.metrics(month.value),
+      qaApi.csvRows(month.value),
+    ])
+    if (current === request) {
+      data.value = result
+      csvRows.value = rows
+    }
   } catch (cause) {
     if (current === request) error.value = errorMessage(cause)
   } finally {
@@ -220,6 +237,30 @@ onMounted(load)
           </dl>
         </section>
       </div>
+      <UiCard padding="md">
+        <div class="section-heading">
+          <div>
+            <h2>Preview CSV</h2>
+            <p>
+              Isi di bawah sama dengan file yang akan diunduh. Baris terbaru ditampilkan lebih dulu.
+            </p>
+          </div>
+        </div>
+        <UiDataTable
+          :rows="csvRows"
+          :columns="csvColumns"
+          row-key="row_id"
+          caption="Preview isi CSV laporan bulanan"
+          :page-size="10"
+        >
+          <template #cell-current_issue="{ value }">
+            <span class="csv-preview-cell">{{ value || '—' }}</span>
+          </template>
+          <template #cell-coverage_links="{ value }">
+            <span class="csv-preview-cell">{{ value || '—' }}</span>
+          </template>
+        </UiDataTable>
+      </UiCard>
     </template>
   </div>
 </template>
@@ -314,6 +355,13 @@ meter::-webkit-meter-bar {
 }
 meter::-webkit-meter-optimum-value {
   background: var(--color-secondary);
+}
+.csv-preview-cell {
+  display: block;
+  min-width: 260px;
+  max-width: 520px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 @media (max-width: 767px) {
   .metric-strip {

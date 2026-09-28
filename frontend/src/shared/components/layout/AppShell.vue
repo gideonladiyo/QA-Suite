@@ -46,7 +46,9 @@ onUnmounted(() => document.removeEventListener('keydown', shortcut))
         ref="main"
         tabindex="-1"
       >
-        <div class="page-content"><RouterView /></div>
+        <div :class="['page-content', { 'page-content-editor': route.meta.layout === 'editor' }]">
+          <RouterView />
+        </div>
       </main>
     </div>
   </div>
@@ -90,6 +92,10 @@ main {
   max-width: 1480px;
   margin: 0 auto;
 }
+.page-content-editor {
+  max-width: none;
+  padding: 16px 20px;
+}
 .skip-link {
   position: fixed;
   top: 8px;
@@ -108,6 +114,9 @@ main {
   .page-content {
     padding: 28px 24px;
   }
+  .page-content-editor {
+    padding: 14px 16px;
+  }
 }
 @media (max-width: 767px) {
   .app-shell,
@@ -122,6 +131,9 @@ main {
   }
   .page-content {
     padding: 24px 16px;
+  }
+  .page-content-editor {
+    padding: 12px;
   }
 }
 </style>

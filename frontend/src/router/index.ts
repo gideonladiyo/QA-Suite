@@ -5,6 +5,7 @@ import { microUtilityRoutes } from '../modules/micro-utilities/routes'
 import { supabaseHubRoutes } from '../modules/supabase-hub/routes'
 import { vaultRoutes } from '../modules/vault/routes'
 import { settingsRoutes } from '../modules/settings/routes'
+import { photoEditorRoutes } from '../modules/photo-editor/routes'
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -12,6 +13,7 @@ export const router = createRouter({
     ...dashboardRoutes,
     ...qaReportRoutes,
     ...microUtilityRoutes,
+    ...photoEditorRoutes,
     ...supabaseHubRoutes,
     ...vaultRoutes,
     ...settingsRoutes,

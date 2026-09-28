@@ -1,3 +1,5 @@
+import csv
+import io
 from datetime import date
 
 import httpx
@@ -246,6 +248,7 @@ def test_month_bounds_and_csv_formula_safety() -> None:
     assert csv_cell("=HYPERLINK(test)").startswith("'")
     assert csv_cell("  @SUM(1)").startswith("'")
     assert csv_cell("QA-17") == "QA-17"
+    assert csv_cell("- bullet issue") == "- bullet issue"
 
 
 async def test_report_workflow_conflict_filters_metrics_and_lock(client: httpx.AsyncClient) -> None:
@@ -267,10 +270,17 @@ async def test_report_workflow_conflict_filters_metrics_and_lock(client: httpx.A
         "result": "Pass",
         "links": [{"url": "not a valid URL"}, {"url": "https://example.test/coverage"}],
     }
+    issue_text = """Previous issue:
+1. Dropdown uses the old style
+2. Button is not centered
+
+New issue:
+- Optional step is inherited
+- History resets to page 1"""
     body = {
         **metadata,
         "version": 1,
-        "items": [item, {**item, "result": "Fail", "current_issue": "Example issue"}],
+        "items": [item, {**item, "result": "Fail", "current_issue": issue_text}],
     }
     saved = await client.put(path, json=body)
     assert saved.status_code == 200, saved.text
@@ -288,6 +298,10 @@ async def test_report_workflow_conflict_filters_metrics_and_lock(client: httpx.A
     assert (await client.get("/api/qa-reports/monthly?month=2026-13")).status_code == 422
     exported = await client.get("/api/qa-reports/monthly.csv?month=2026-09")
     assert exported.status_code == 200 and "QA-17" in exported.text
+    csv_rows = list(csv.DictReader(io.StringIO(exported.content.decode("utf-8-sig"))))
+    assert csv_rows[1]["Current issue"] == issue_text
+    preview_rows = (await client.get("/api/qa-reports/monthly/rows?month=2026-09")).json()
+    assert preview_rows[1]["current_issue"] == issue_text
     preview = await client.get(path + "/preview")
     assert preview.status_code == 200 and "Current issues:" in preview.json()["slack"]
     finalized = await client.post(path + "/finalize", json={"version": 2})

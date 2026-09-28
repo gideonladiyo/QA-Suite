@@ -35,7 +35,7 @@ async function load(): Promise<void> {
   loading.value = true
   error.value = ''
   try {
-    const result = await qaApi.list({ ...applied.value, page: String(page.value), order: 'asc' })
+    const result = await qaApi.list({ ...applied.value, page: String(page.value), order: 'desc' })
     if (current === request) {
       data.value = result
       if (page.value > pages.value) {
@@ -70,10 +70,6 @@ function deleted(): void {
   notify('Laporan dihapus permanen.')
   void load()
 }
-function latest(): void {
-  page.value = pages.value
-  void load()
-}
 onMounted(load)
 </script>
 <template>
@@ -81,10 +77,7 @@ onMounted(load)
   <div class="page-header">
     <div>
       <h1>QA Reports</h1>
-      <p>
-        Daftar berdasarkan tanggal laporan, dari terlama ke terbaru. Laporan terbaru berada di
-        bawah.
-      </p>
+      <p>Daftar berdasarkan tanggal laporan, dari terbaru ke terlama.</p>
     </div>
     <UiButton @click="router.push('/qa-reports/new')">Tambah laporan</UiButton>
   </div>
@@ -211,7 +204,7 @@ onMounted(load)
         v-if="!loading && !error && data.total"
         class="qa-pagination"
       >
-        <span>{{ data.total }} laporan · terbaru di bawah</span>
+        <span>{{ data.total }} laporan · terbaru di atas</span>
         <div class="qa-actions">
           <UiButton
             variant="ghost"
@@ -219,14 +212,6 @@ onMounted(load)
             @click="changePage(-1)"
           >
             Sebelumnya
-          </UiButton>
-          <UiButton
-            v-if="pages > 1"
-            variant="ghost"
-            :disabled="page >= pages || loading"
-            @click="latest"
-          >
-            Ke laporan terbaru
           </UiButton>
           <span aria-live="polite">{{ page }} / {{ pages }}</span>
           <UiButton

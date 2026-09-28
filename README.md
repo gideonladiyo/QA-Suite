@@ -10,11 +10,12 @@ Workspace lokal berbasis Vue 3, Vite, TypeScript, Tailwind CSS, Pinia, dan Vue R
 | 2 | Fondasi FastAPI/Postgres, autentikasi lokal, migrasi, dan QA Reports | Implemented |
 | 3 | Micro Utilities: HTTP Client, JSONizer, Dummy Data, Base64/JWT | Implemented |
 | 4 | Supabase Hub | Belum dikerjakan |
-| 5 | Vault dan keamanan secret | Belum dikerjakan |
+| 5 | Vault untuk password, secret, catatan, dan command penting | Implemented |
+| 6 | Photo Editor lokal: layer, mask, brush, adjustment, history, dan export | Implemented v1 foundation |
 
-QA Reports menyimpan laporan harian dan seluruh aktivitas ke PostgreSQL dalam satu transaksi. Alur utama: daftar laporan → tambah/buka → isi aktivitas yang bisa dilipat → simpan → salin untuk Slack atau unduh `.md`/`.txt`. Template custom, hapus dengan konfirmasi, backup/pemulihan JSON, HTML, salin dari kemarin, filter, metrik bulanan, dan CSV tersedia. Tidak perlu finalisasi atau konfigurasi pengiriman untuk mengekspor. Micro Tools memiliki empat workspace fungsional; modul tahap 4–5 masih berupa penjelasan fitur. Halaman `/components` menyediakan demonstrasi komponen dengan data contoh di memori. Preferensi tema, palet warna, dan ID template terakhir disimpan di localStorage, bukan isi laporan; sesi memakai cookie HttpOnly.
+QA Reports menyimpan laporan harian dan seluruh aktivitas ke PostgreSQL dalam satu transaksi. Alur utama: daftar laporan → tambah/buka → isi aktivitas yang bisa dilipat → simpan → salin untuk Slack atau unduh `.md`/`.txt`. Template custom, hapus dengan konfirmasi, backup/pemulihan JSON, HTML, salin dari kemarin, filter, metrik bulanan, dan CSV tersedia. Tidak perlu finalisasi atau konfigurasi pengiriman untuk mengekspor. Micro Tools memiliki empat workspace fungsional. Vault menyimpan password, API key, token, catatan, dan command secara terenkripsi; Supabase Hub masih berupa penjelasan fitur. Halaman `/components` menyediakan demonstrasi komponen dengan data contoh di memori. Preferensi tema, palet warna, dan ID template terakhir disimpan di localStorage, bukan isi laporan; sesi memakai cookie HttpOnly di environment nonlokal.
 
-Status di atas merujuk source code. Container yang sudah berjalan tidak otomatis memakai perubahan; pembaruan memerlukan build/deploy yang disengaja. Migrasi `0002_micro_tools` menambah tabel riwayat dan preset; `0003_qa_report_templates` menambah template serta salinan format pada laporan tanpa mengubah isi laporan lama.
+Status di atas merujuk source code. Container yang sudah berjalan tidak otomatis memakai perubahan; pembaruan memerlukan build/deploy yang disengaja. Migrasi `0002_micro_tools` menambah tabel riwayat dan preset; `0003_qa_report_templates` menambah template serta salinan format pada laporan tanpa mengubah isi laporan lama; `0006_vault` menambah Master Lock, item terenkripsi, dan log akses Vault.
 
 ## Jalankan dengan Docker
 
@@ -85,6 +86,16 @@ Bagian **Sesuaikan warna atau impor palet** menyediakan color picker dan kode HE
 Preset tambahan memakai kombinasi swatch dari [Material Design 2014](https://m2.material.io/design/color/the-color-system.html), bukan implementasi penuh tema Material. Palet awal berasal dari [Color Hunt](https://colorhunt.co/palette/f8b2b2af719d8b639b403d88). Warna dasar dipertahankan dalam preferensi; turunannya disesuaikan untuk keterbacaan teks/tombol di mode terang maupun gelap. Warna status sukses, peringatan, dan error tetap terpisah.
 
 Palet aktif disimpan di localStorage browser ini (`qa-portal:color-palette`), bukan PostgreSQL atau backup laporan. Bagian **Palet tersimpan** dapat menyimpan hingga 20 palet bernama di `qa-portal:saved-color-palettes`. Klik **Tambah palet**, lalu isi nama serta kode HEX Primary, Secondary, Accent, dan Highlight. Palet dapat dimuat ke preview, diedit lewat form yang sama, atau dihapus tanpa mengubah warna aktif sampai **Terapkan palet** diklik. Tema terang/gelap tetap pengaturan terpisah. Jika penyimpanan ditolak browser, palet aktif masih berlaku selama sesi dengan peringatan, sedangkan daftar palet tidak diubah. Pilih **Portal original → Terapkan palet** untuk menghapus override dan kembali ke token CSS asli. Tidak memerlukan migrasi database atau dependensi baru.
+
+## Pemakaian Vault
+
+1. Buka **Vault**, lalu buat Master PIN minimal 6 digit atau passphrase minimal 8 karakter. Master Lock ini tetap wajib walaupun login portal dimatikan pada `APP_ENV=local`.
+2. Simpan Master dengan aman. Versi ini tidak memiliki reset atau recovery; jika Master terlupa, item lama tidak dapat didekripsi.
+3. Tambahkan item dan pilih kategori **Password**, **API Key**, **Token**, **Command**, **Catatan**, atau **Lainnya**. Command memakai editor multiline agar perintah beserta argumennya mudah disimpan. Nilai dan catatan dienkripsi AES-256-GCM sebelum masuk PostgreSQL; daftar hanya memuat metadata dan nilai tersamar.
+4. Gunakan **Salin** untuk menyalin tanpa menampilkan nilai atau **Tampilkan** untuk membuka nilai dan catatan. Aplikasi mencoba membersihkan clipboard setelah 30 detik jika isinya belum diganti, tetapi izin browser dapat membatasi upaya ini.
+5. Vault terkunci otomatis setelah 1–60 menit aktivitas berhenti (default 5 menit), saat tab ditutup, backend dimulai ulang, atau tombol **Kunci sekarang** dipilih. Sesi unlock hanya disimpan di memori.
+
+Pencarian hanya memeriksa judul, username, dan kategori, bukan nilai atau catatan terenkripsi. Filter kategori dan urutan terbaru/alfabetis/tanggal dibuat tersedia. Backup QA Reports tidak mencakup Vault; pemulihan Vault memerlukan backup database utuh dan Master yang benar.
 
 ## Pemakaian QA Reports
 

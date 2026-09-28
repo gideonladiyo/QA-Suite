@@ -197,3 +197,17 @@ class MonthlyMetrics(Schema):
     environments: list[CountGroup]
     results: list[CountGroup]
     trend: list[DayCount]
+
+
+class CsvPreviewRow(Schema):
+    model_config = ConfigDict(from_attributes=True, str_strip_whitespace=False, extra="forbid")
+
+    row_id: str
+    date: date
+    title: str
+    activity: str
+    environment: str
+    result: str
+    current_status: str
+    current_issue: str
+    coverage_links: str

@@ -1,17 +1,17 @@
-# PRD: Local Password & Secret Manager ("Vault")
+# PRD: Local Password, Secret & Command Manager ("Vault")
 
 **Module ID:** `vault`
 **Owner:** Personal QA & Developer Utilities Portal
-**Status:** Draft v1.0
+**Status:** Implemented v1.0
 
 ## 1. Overview
 
-A local, AES-256-encrypted secret manager for storing passwords, API keys, and other sensitive strings the user needs during daily QA/dev work (test account logins, staging credentials, personal tokens). Protected behind a **Master Lock (PIN or passphrase)** so that even on a shared or unlocked machine, the vault contents aren't exposed at a glance.
+A local, AES-256-encrypted manager for storing passwords, API keys, tokens, notes, and important shell/CLI commands the user needs during daily QA/dev work. Protected behind a **Master Lock (PIN or passphrase)** so that even on a shared or unlocked machine, the vault contents aren't exposed at a glance.
 
 This is the most security-sensitive module in the portal and should be built and reviewed with the most caution of all modules described in this document set.
 
 ## 2. Goals
-- Store secrets encrypted at rest using AES-256.
+- Store secrets and command snippets encrypted at rest using AES-256-GCM.
 - Require explicit unlock (Master PIN/passphrase) before any secret is viewable or copyable, each session.
 - Make everyday retrieval fast (quick-copy) without ever displaying more of the secret than necessary.
 - Auto-lock after inactivity.
@@ -45,13 +45,13 @@ This is the most security-sensitive module in the portal and should be built and
 - Successful unlock establishes a short-lived in-memory session (see US-4, auto-lock) — the derived encryption key is held only in backend memory for that session, never persisted to disk or sent to the frontend.
 - The frontend never receives the Master PIN/passphrase or derived key in any API response — only a session token indicating "unlocked" state.
 
-### US-3: Add / edit / delete a secret
+### US-3: Add / edit / delete a Vault item
 **As a** user
-**I want to** store a new secret with a label, value, and optional metadata
+**I want to** store a new secret or important command with a label, value, and optional metadata
 **So that** I can retrieve it later without remembering it
 
 **Acceptance Criteria:**
-- Fields: `Title*` (e.g., "Staging DB Admin"), `Username` (optional), `Secret Value*` (password/token/key — masked input), `Category` (optional: Password / API Key / Token / Note / Other), `URL` (optional), `Notes` (optional, also encrypted).
+- Fields: `Title*` (e.g., "Staging DB Admin" or "Restart worker"), `Username` (optional), `Value*` (password/token/key or command), `Category` (Password / API Key / Token / Command / Note / Other), `URL` (optional), `Notes` (optional, also encrypted). Command and Note values use a multiline editor; secret categories use a masked input.
 - Secret value is encrypted client-request → server-side using AES-256-GCM before being written to `vault_secrets`; plaintext never touches the database.
 - Editing a secret requires the Vault to be currently unlocked; editing re-encrypts and overwrites, it does not create a new plaintext-adjacent draft anywhere.
 - Deleting a secret requires confirmation and is a hard delete.
@@ -90,7 +90,7 @@ This is the most security-sensitive module in the portal and should be built and
 
 ## 5. Encryption & Security Summary (full flow in `SYSTEM_ARCHITECTURE.md §4`)
 - **Algorithm:** AES-256-GCM (authenticated encryption — protects both confidentiality and integrity).
-- **Key derivation:** Argon2id (preferred) from Master PIN/passphrase + a per-install salt stored in `VAULT_PIN_HASH_SALT`.
+- **Key derivation:** PBKDF2-HMAC-SHA256 with 600,000 iterations from the Master PIN/passphrase and a random salt stored in `vault_master_lock.kdf_salt`. Password verification uses a separate salted PBKDF2 hash.
 - **At rest:** `vault_secrets.encrypted_value` stores ciphertext + nonce/IV + auth tag; never plaintext.
 - **In transit (frontend ↔ backend):** even though this runs locally, all Vault traffic should be served over HTTPS in any non-`localhost` WSL setup (e.g., if the WSL host is reached from Windows via a mapped hostname) — see `SYSTEM_ARCHITECTURE.md`.
 - **In memory:** the derived key exists only for the duration of an unlocked session and only in backend process memory; never written to disk, never logged, never included in error messages.

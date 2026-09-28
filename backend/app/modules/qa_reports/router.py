@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Query, Request, Response
 from app.core.auth import Db, require_user
 from app.modules.qa_reports import backup, delivery, service
 from app.modules.qa_reports.schemas import (
+    CsvPreviewRow,
     DeliveryOptions,
     MonthlyMetrics,
     Preview,
@@ -83,6 +84,13 @@ async def csv_download(db: Db, month: Annotated[str, Query(pattern=r"^\d{4}-\d{2
         media_type="text/csv",
         headers={"Content-Disposition": f'attachment; filename="qa-reports-{month}.csv"'},
     )
+
+
+@router.get("/monthly/rows")
+async def csv_preview(
+    db: Db, month: Annotated[str, Query(pattern=r"^\d{4}-\d{2}$")]
+) -> list[CsvPreviewRow]:
+    return await service.monthly_csv_rows(db, month)
 
 
 @router.get("/delivery-options")

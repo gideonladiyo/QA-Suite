@@ -8,6 +8,7 @@ import {
   PhLockKey,
   PhStack,
   PhCheck,
+  PhImageSquare,
 } from '@phosphor-icons/vue'
 import UiCard from '../../../shared/components/ui/UiCard.vue'
 import UiBadge from '../../../shared/components/ui/UiBadge.vue'
@@ -173,6 +174,17 @@ const tools = [
           </RouterLink>
         </div>
       </section>
+      <RouterLink
+        to="/photo-editor"
+        class="photo-editor-launch"
+      >
+        <span class="photo-editor-icon"><PhImageSquare :size="27" weight="duotone" /></span>
+        <span>
+          <strong>Edit gambar langsung di workspace</strong>
+          <small>Layer, mask, brush, adjustment, history, dan export. Semua diproses lokal.</small>
+        </span>
+        <PhArrowUpRight :size="18" />
+      </RouterLink>
     </div>
     <div class="side-column">
       <UiCard
@@ -212,18 +224,16 @@ const tools = [
               :size="24"
               weight="duotone"
             />
-            <UiBadge>Belum disiapkan</UiBadge>
+            <UiBadge tone="success">Terenkripsi</UiBadge>
           </div>
         </template>
-        <h3>Ruang untuk secret-mu</h3>
-        <p>
-          Master lock, enkripsi, dan akses per sesi akan disiapkan sebelum Vault bisa digunakan.
-        </p>
+        <h3>Secret dan command penting</h3>
+        <p>Simpan password, token, catatan sensitif, dan command di balik Master Lock terpisah.</p>
         <RouterLink
           to="/vault"
           class="text-link"
         >
-          Tentang Vault
+          Buka Vault
           <PhArrowRight :size="15" />
         </RouterLink>
       </UiCard>
@@ -414,6 +424,46 @@ const tools = [
 }
 .tools-section {
   margin-top: 32px;
+}
+.photo-editor-launch {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 24px;
+  padding: 15px 17px;
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+}
+.photo-editor-launch:hover {
+  border-color: var(--color-primary);
+}
+.photo-editor-launch > span:nth-child(2) {
+  flex: 1;
+}
+.photo-editor-launch strong,
+.photo-editor-launch small {
+  display: block;
+}
+.photo-editor-launch strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.photo-editor-launch small {
+  margin-top: 4px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+.photo-editor-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: var(--color-brand-panel);
+  color: var(--color-primary);
 }
 .tools-section h2 {
   font-size: 18px;

@@ -9,6 +9,7 @@ import {
   PhGlobe,
   PhShuffle,
   PhKey,
+  PhImageSquare,
 } from '@phosphor-icons/vue'
 import type { Component } from 'vue'
 
@@ -27,8 +28,19 @@ export const primaryNavigation: NavigationItem[] = [
     icon: PhBracketsCurly,
     keywords: 'utilities alat',
   },
+  {
+    label: 'Photo Editor',
+    path: '/photo-editor',
+    icon: PhImageSquare,
+    keywords: 'photo image gambar edit mask crop resize compress layer',
+  },
   { label: 'Supabase Hub', path: '/supabase-hub', icon: PhDatabase, keywords: 'koneksi database' },
-  { label: 'Vault', path: '/vault', icon: PhLockKey, keywords: 'password secret kata sandi' },
+  {
+    label: 'Vault',
+    path: '/vault',
+    icon: PhLockKey,
+    keywords: 'password secret kata sandi command perintah snippet',
+  },
 ]
 export const secondaryNavigation: NavigationItem[] = [
   {

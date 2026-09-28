@@ -14,7 +14,10 @@ dev = ["pytest>=8,<10", "pytest-asyncio>=1,<2", "ruff>=0.11,<1", "mypy>=1.15,<2"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["tests", "app/modules/qa_reports/tests", "app/modules/micro_utilities/tests"]
+testpaths = [
+  "tests", "app/modules/qa_reports/tests", "app/modules/micro_utilities/tests",
+  "app/modules/vault/tests",
+]
 
 [tool.ruff]
 target-version = "py312"

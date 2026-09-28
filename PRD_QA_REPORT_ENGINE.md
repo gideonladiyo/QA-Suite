@@ -17,7 +17,7 @@
 
 ### Phase 2 implementation decisions (historical; Phase 3 supersedes the three-step flow)
 
-- The latest September 2 user revision makes `/qa-reports` the report list, sorted by report date ascending: oldest first, newest at the bottom across pages. "Tambah laporan" opens a separate unsaved editor at `/qa-reports/new`; `/qa-reports/history` redirects to the list. Filters and backup controls are collapsible so the list stays prominent.
+- The September 26 revision sorts `/qa-reports` by report date descending: newest first across pages. "Tambah laporan" opens a separate unsaved editor at `/qa-reports/new`; `/qa-reports/history` redirects to the list. Filters and backup controls are collapsible so the list stays prominent.
 - First save posts metadata and items together, atomically, just like subsequent edits. Opening a blank form never creates a database record. A duplicate date links to the existing report without overwriting it. At least one valid activity is required by the input UI.
 - The editor is a three-step workflow: (1) metadata and activity list with environment/result; (2) coverage links per activity; (3) issues/current status, then save. Lanjut validates the visible stage and advances without writing to the database. Back preserves all input. A numbered progress indicator and heading focus communicate stage changes. Successful saving opens the saved report preview.
 - Saved editable reports use the visible label Tersimpan, not Draft. The internal `draft` status still means editable and remains unchanged for API/backup compatibility. No finalization or data migration is required. Unsaved form changes retain a separate warning.
@@ -140,7 +140,7 @@ A `daily_report` (one per date) has many `report_items` (one per ticket/activity
 **So that** I can find and reuse historical data
 
 **Acceptance Criteria:**
-- The default QA Reports view lists reports chronologically, oldest at the top and newest at the bottom, filterable by date range and by environment/result. Pagination uses this ordering globally and provides a shortcut to the last page.
+- The default QA Reports view lists reports from newest to oldest, filterable by date range and by environment/result. Pagination keeps this ordering globally.
 - Clicking a past report opens a read-only view with an "Edit" toggle.
 - Search by ticket code across all historical reports is supported.
 

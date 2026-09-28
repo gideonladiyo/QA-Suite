@@ -73,6 +73,17 @@ export interface Metrics {
   results: { label: string; count: number }[]
   trend: { date: string; count: number }[]
 }
+export interface CsvPreviewRow {
+  row_id: string
+  date: string
+  title: string
+  activity: string
+  environment: string
+  result: string
+  current_status: string
+  current_issue: string
+  coverage_links: string
+}
 const base = '/qa-reports'
 export const qaApi = {
   remove: (id: string, version: number): Promise<void> =>
@@ -111,6 +122,8 @@ export const qaApi = {
     api(`${base}/monthly?${new URLSearchParams({ month })}`),
   csv: (month: string): Promise<Blob> =>
     apiFile(`${base}/monthly.csv?${new URLSearchParams({ month })}`),
+  csvRows: (month: string): Promise<CsvPreviewRow[]> =>
+    api(`${base}/monthly/rows?${new URLSearchParams({ month })}`),
   deliveryOptions: (): Promise<{ slack: boolean; email: boolean }> =>
     api(`${base}/delivery-options`),
   send: (

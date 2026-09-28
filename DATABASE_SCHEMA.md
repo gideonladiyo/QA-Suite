@@ -8,7 +8,7 @@ This schema is the source of truth referenced by `AGENT_INSTRUCTIONS.md §6`. An
 
 ### Implemented migration scope
 
-Migration `0001_auth_qa` creates local authentication and the three QA tables below. `0003_qa_report_templates` adds reusable templates and a snapshot of the selected template to each report; deleting a template does not change existing reports. `0002_micro_tools` adds encrypted HTTP request history and dummy schema presets; Supabase Hub and Vault remain planned. `daily_reports.version` is incremented under a row lock on save/finalize/send; a stale client version returns HTTP 409. DELETE checks the same version under a row lock before deleting the report and its children. QA-only JSON backup/restore requires no schema change; restoration creates new identities and skips existing report dates without overwriting them. It does not include Micro Tools data.
+Migration `0001_auth_qa` creates local authentication and the three QA tables below. `0003_qa_report_templates` adds reusable templates and a snapshot of the selected template to each report; deleting a template does not change existing reports. `0002_micro_tools` adds encrypted HTTP request history and dummy schema presets. `0006_vault` implements the Vault master lock, encrypted items, and access log; Supabase Hub remains planned. `daily_reports.version` is incremented under a row lock on save/finalize/send; a stale client version returns HTTP 409. DELETE checks the same version under a row lock before deleting the report and its children. QA-only JSON backup/restore requires no schema change; restoration creates new identities and skips existing report dates without overwriting them. It does not include Micro Tools or Vault data.
 
 Authentication has two deliberate exceptions to the UUID/timestamp conventions: the single account uses `id = 1`, and sessions use a SHA-256 token digest as their primary key. Session rows expire after 12 hours and are revoked on logout. No plaintext password or session token is stored.
 
@@ -230,7 +230,7 @@ CREATE INDEX idx_supabase_access_log_created_at ON supabase_config_access_log(cr
 -- lock's hashed PIN/passphrase. Never stores the PIN itself.
 CREATE TABLE vault_master_lock (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    pin_hash            TEXT NOT NULL,               -- Argon2id hash
+    pin_hash            TEXT NOT NULL,               -- salted PBKDF2-SHA256 verifier
     kdf_salt            BYTEA NOT NULL,               -- salt used for key derivation (separate from hash salt)
     failed_attempts     INTEGER NOT NULL DEFAULT 0,
     locked_until        TIMESTAMPTZ,                  -- backoff lockout expiry, null if not locked out
@@ -248,7 +248,7 @@ CREATE TABLE vault_secrets (
     title               VARCHAR(255) NOT NULL,
     username            VARCHAR(255),
     category            VARCHAR(50) NOT NULL DEFAULT 'other'
-                            CHECK (category IN ('password','api_key','token','note','other')),
+                            CHECK (category IN ('password','api_key','token','command','note','other')),
     url                 TEXT,
 
     -- Encrypted secret value (AES-256-GCM)
@@ -302,7 +302,7 @@ dummy_data_presets         [standalone preset table]
 ## Notes on Encrypted Columns
 - Ciphertext and nonce are always stored as **separate columns**, never concatenated into one blob, so key rotation and auditing tooling can reason about them independently.
 - No table in this schema stores a plaintext secret, plaintext API key, or plaintext PIN anywhere — this is a hard invariant enforced by both this schema and `AGENT_INSTRUCTIONS.md §5`.
-- `vault_master_lock.kdf_salt` is distinct from the Argon2id hash's own internal salt; it is the salt used when deriving the **AES-256 data key** from the user's PIN, kept separate from password-hash verification for cleanest separation of concerns between "verify the PIN" and "derive the encryption key."
+- `vault_master_lock.kdf_salt` is distinct from the password verifier's internal salt; it is used by PBKDF2-HMAC-SHA256 (600,000 iterations) to derive the **AES-256 data key** from the user's Master PIN/passphrase. Verification and encryption-key derivation remain separate operations.
 
 ## Suggested Alembic Migration Order
 1. Extensions + shared trigger function

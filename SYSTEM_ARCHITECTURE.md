@@ -37,7 +37,7 @@ Nginx proxies `/api/` to FastAPI on the same origin. Backend starts after the Po
 
 Authentication is disabled when `APP_ENV=local`, matching the local-only trusted-user deployment. Other environments use single-user auth: initial setup, PBKDF2-SHA256 password hashing (600,000 iterations), signed HttpOnly SameSite=Strict cookies, server-side revocation, 12-hour sessions, and a persistent one-minute login lock after five failures. Write requests require an allowed Origin and `X-QA-Request: 1`; CORS is not enabled. Host validation restricts local hostnames. The server does not trust a browser claim that a report is editable.
 
-`backend/scripts/init_env.py` generates local app/database secrets once and never overwrites `.env`. Settings construct the SQLAlchemy URL from `POSTGRES_*` with correct credential escaping; a separate `DATABASE_URL` variable is not used in this implementation. Vault/encryption secrets are not initialized before those modules are implemented. Frontend receives no server environment variables. HTTP is restricted to loopback; an HTTPS deployment must enable `COOKIE_SECURE` and review origin/host settings. Do not expose this setup publicly.
+`backend/scripts/init_env.py` generates local app/database secrets once and never overwrites `.env`. Settings construct the SQLAlchemy URL from `POSTGRES_*` with correct credential escaping; a separate `DATABASE_URL` variable is not used in this implementation. Vault encryption is derived from its user-supplied Master PIN/passphrase and does not add an environment secret. Frontend receives no server environment variables. HTTP is restricted to loopback; an HTTPS deployment must enable `COOKIE_SECURE` and review origin/host settings. Do not expose this setup publicly.
 
 Auth and API errors omit submitted values. Request-body logging and Uvicorn access/error traces are disabled in the shipped launch command to avoid leaking future secret payloads; healthchecks provide basic operational status. This is a local deployment baseline, not a complete production observability/security system.
 
@@ -171,7 +171,7 @@ Frontend (Vue) → REST call (JSON) → FastAPI router (module)
 
 ### 4.3 Encryption / Decryption Flow (Vault & Supabase Hub)
 
-Both the Vault and Supabase Hub modules use the same underlying `core` encryption utility (`app/core/security.py`) but with different key-derivation entry points, since Vault is protected by a user PIN and Supabase Hub is protected by the app-level `ENCRYPTION_KEY`.
+Vault encryption is implemented in `app/modules/vault/service.py`; the not-yet-implemented Supabase Hub is expected to use the same AES-GCM primitive with a separate app-level key source. Vault reuses only the shared password-verification and token-digest helpers from `app/core/security.py`.
 
 **Shared primitive:** AES-256-GCM via Python's `cryptography` library.
 
@@ -189,14 +189,14 @@ Ciphertext + Nonce + Auth Tag  ──► stored in Postgres (bytea/text columns)
 
 | Module | Key Source | Key Lifetime |
 |---|---|---|
-| `supabase_hub` | Derived once from `ENCRYPTION_KEY` env var at backend startup, held in an app-level singleton in memory | Lives as long as the backend process is running |
-| `vault` | Derived per-unlock from the user's Master PIN/passphrase (Argon2id + `VAULT_PIN_HASH_SALT`) | Lives only for the unlocked session; discarded on lock/timeout/restart |
+| `supabase_hub` (planned) | App-level environment key; exact implementation remains part of Stage 4 | Expected to live for the backend process |
+| `vault` | PBKDF2-HMAC-SHA256, 600,000 iterations, from the Master PIN/passphrase plus `vault_master_lock.kdf_salt` | Lives only for the unlocked session; zeroed/discarded on lock/timeout/restart |
 
 **Decrypt flow (both modules), conceptually:**
 ```python
 def decrypt(ciphertext: bytes, nonce: bytes, key: bytes) -> str:
     aesgcm = AESGCM(key)
-    plaintext = aesgcm.decrypt(nonce, ciphertext, associated_data=None)
+    plaintext = aesgcm.decrypt(nonce, ciphertext, associated_data=field_label + item_uuid)
     return plaintext.decode()
 ```
 - Decrypted values are used **in-process only** for the immediate purpose (e.g., making an outbound Supabase call, or returning a copy-to-clipboard payload over the already-authenticated local session) and are never written back to disk or included in logs.
@@ -209,7 +209,7 @@ def decrypt(ciphertext: bytes, nonce: bytes, key: bytes) -> str:
 ## 5. Cross-Module Interaction Rules
 - Modules communicate only through explicit service-layer function calls within the backend, never by directly querying another module's tables.
 - The frontend never assumes another module's data shape is "close enough" to reuse — each module exposes its own typed API contract.
-- Only `supabase_hub` and `vault` touch the shared encryption utility in `app/core/security.py`; no other module should read or write encrypted columns.
+- Encryption code stays owned by the module that defines the encrypted data contract. No other module should read or write another module's encrypted columns.
 
 ## 6. Deployment/Runtime Notes
 - This system is designed for **local-only use**. If ever exposed beyond `localhost` (e.g., accessed from another device on a home network), HTTPS termination (self-signed cert or a local reverse proxy like Caddy) and stronger auth (beyond a simple local session) should be added before doing so — this is called out explicitly rather than assumed, since the Vault and Supabase Hub modules increase the stakes of casual network exposure.

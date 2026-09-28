@@ -335,6 +335,7 @@ The dashboard is a launch surface, not an analytics wall.
 - Locked state is the default and must not preload secret values.
 - Unlock, lock, reveal, copy, timeout, and failure states must be visually distinct.
 - Secret values stay masked in lists. Copy must not require reveal.
+- Command and note values use a multiline monospace editor, while following the same masked-list and encrypted-storage rules as secrets.
 - Destructive delete uses `UiConfirmDialog.vue` with irreversible wording.
 - Avoid playful password-manager styling. This is a security-sensitive workspace.
 
