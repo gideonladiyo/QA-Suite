@@ -64,13 +64,14 @@ onUnmounted(() => document.removeEventListener('keydown', shortcut))
 </template>
 <style scoped>
 .app-shell {
-  --sidebar-width: 244px;
+  --sidebar-width: 236px;
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   min-height: 100dvh;
+  background: var(--color-page);
 }
 .app-shell.collapsed {
-  --sidebar-width: 80px;
+  --sidebar-width: 76px;
 }
 .desktop-sidebar {
   /* Anchor navigation to the viewport, independent of report/page length. */
@@ -83,13 +84,14 @@ onUnmounted(() => document.removeEventListener('keydown', shortcut))
 .app-workspace {
   grid-column: 2;
   min-width: 0;
+  min-height: 100dvh;
 }
 main {
   outline: none;
 }
 .page-content {
-  padding: 36px;
-  max-width: 1480px;
+  padding: 32px;
+  max-width: 1520px;
   margin: 0 auto;
 }
 .page-content-editor {
@@ -105,14 +107,15 @@ main {
   background: var(--color-primary);
   color: var(--color-on-primary);
   z-index: var(--layer-notification);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
+  font-weight: 600;
 }
 .skip-link:focus {
   transform: translateY(0);
 }
 @media (max-width: 1050px) {
   .page-content {
-    padding: 28px 24px;
+    padding: 26px 22px;
   }
   .page-content-editor {
     padding: 14px 16px;
@@ -130,7 +133,7 @@ main {
     grid-column: 1;
   }
   .page-content {
-    padding: 24px 16px;
+    padding: 22px 14px;
   }
   .page-content-editor {
     padding: 12px;

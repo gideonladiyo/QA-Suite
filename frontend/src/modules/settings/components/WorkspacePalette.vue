@@ -444,9 +444,9 @@ watch(
       </ul>
     </section>
     <p class="small muted">
-      Palet aktif dan daftar palet tersimpan hanya ada di browser ini, bukan database. Pilih Portal
-      original lalu Terapkan palet untuk kembali ke warna awal. Warna status sukses, peringatan, dan
-      error tidak diubah.
+      Palet aktif dan daftar palet tersimpan hanya ada di browser ini, bukan database. Pilih
+      Workbench lalu Terapkan palet untuk kembali ke warna awal. Warna status sukses, peringatan,
+      dan error tidak diubah.
     </p>
     <UiModal
       v-model="editorOpen"

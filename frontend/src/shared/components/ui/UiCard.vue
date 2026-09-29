@@ -44,13 +44,13 @@ withDefaults(
   min-width: 0;
   text-align: left;
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-panel);
   color: var(--color-text);
 }
 .card-subtle {
   background: var(--color-surface-subtle);
-  border-color: transparent;
+  border-color: var(--color-border);
 }
 .card-outlined {
   background: transparent;
@@ -78,12 +78,14 @@ withDefaults(
 .card-interactive {
   width: 100%;
   transition:
-    border-color var(--duration-fast),
-    background-color var(--duration-fast);
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 .card-interactive:hover {
-  border-color: var(--color-secondary);
-  background: var(--color-surface-subtle);
+  border-color: var(--color-primary);
+  background: var(--color-surface-accent);
+  transform: translateY(-2px);
 }
 @media (max-width: 767px) {
   .card-padding-lg,

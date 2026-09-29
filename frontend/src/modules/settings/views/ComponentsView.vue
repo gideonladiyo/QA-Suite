@@ -69,7 +69,7 @@ const columns = [
   { key: 'category', label: 'Kategori', sortable: true },
 ] as const
 const code =
-  ':root {\n  --color-ink: #403d88;\n  --color-violet: #8b639b;\n  --color-mauve: #af719d;\n  --color-blush: #f8b2b2;\n}'
+  ':root {\n  --color-ink: #17382d;\n  --color-violet: #60766b;\n  --color-mauve: #b54a25;\n  --color-blush: #e8dfcc;\n}'
 </script>
 <template>
   <div class="page-header">

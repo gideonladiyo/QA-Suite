@@ -56,7 +56,7 @@ onUnmounted(() => window.removeEventListener('qa:session-expired', expire))
   >
     <div class="auth-intro">
       <div class="auth-heading">
-        <span class="auth-mark">QA / LOCAL</span>
+        <span class="auth-mark">WORKBENCH / LOCAL</span>
         <UiButton
           variant="ghost"
           size="sm"
@@ -66,7 +66,7 @@ onUnmounted(() => window.removeEventListener('qa:session-expired', expire))
         </UiButton>
       </div>
       <h1>{{ auth.setupRequired ? 'Siapkan workspace-mu.' : 'Kembali ke pekerjaanmu.' }}</h1>
-      <p>Laporan pengujian dan alat developer, tersimpan di perangkatmu.</p>
+      <p>Satu workspace untuk pekerjaan teknis harian, tersimpan di perangkatmu.</p>
     </div>
     <UiCard
       class="auth-card"
@@ -88,7 +88,7 @@ onUnmounted(() => window.removeEventListener('qa:session-expired', expire))
         <p class="muted small auth-description">
           {{
             auth.setupRequired
-              ? 'Satu akun untuk portal ini. Pilih password yang dapat kamu simpan dengan aman; belum ada pemulihan password otomatis.'
+              ? 'Satu akun untuk workspace ini. Pilih password yang dapat kamu simpan dengan aman; belum ada pemulihan password otomatis.'
               : 'Gunakan akun yang dibuat saat setup pertama.'
           }}
         </p>
@@ -107,6 +107,7 @@ onUnmounted(() => window.removeEventListener('qa:session-expired', expire))
   align-items: center;
   gap: 24px;
   padding: 40px 20px;
+  background: var(--color-page);
 }
 .auth-intro,
 .auth-card {
@@ -114,9 +115,9 @@ onUnmounted(() => window.removeEventListener('qa:session-expired', expire))
   max-width: 460px;
 }
 .auth-intro h1 {
-  font-size: 30px;
-  line-height: 1.2;
-  margin: 22px 0 12px;
+  font-size: 34px;
+  line-height: 1.1;
+  margin: 28px 0 12px;
 }
 .auth-intro p {
   color: var(--color-text-muted);
@@ -124,11 +125,12 @@ onUnmounted(() => window.removeEventListener('qa:session-expired', expire))
 }
 .auth-mark {
   color: var(--color-primary);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  border-left: 4px solid var(--color-blush);
-  padding-left: 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  border-bottom: 1px solid var(--color-accent);
+  padding-bottom: 5px;
 }
 .auth-description {
   margin: 12px 0 24px;

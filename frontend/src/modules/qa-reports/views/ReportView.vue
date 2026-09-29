@@ -83,6 +83,8 @@ const error = ref(''),
 const preview = ref<Preview>(),
   previewError = ref(''),
   previewLoading = ref(false)
+const guidanceOptionDraft = ref('')
+const guidanceOptions = ref<string[]>([])
 const editor = ref<HTMLFormElement>()
 const step = ref(1)
 const stepHeading = ref<HTMLElement>()
@@ -169,6 +171,53 @@ const duplicates = computed(() => {
   const codes = items.value.map((item) => item.activity_code.trim()).filter(Boolean)
   return codes.length - new Set(codes).size
 })
+const guidanceStorageKey = 'qa-report-pic-guidance-options'
+const existingGuidanceOptions = computed(() => [
+  ...new Set(
+    items.value
+      .map((item) => item.pic_guidance?.trim() ?? '')
+      .filter((value) => value && !guidanceOptions.value.includes(value)),
+  ),
+])
+const activityGuidanceOptions = computed(() => [
+  ...guidanceOptions.value,
+  ...existingGuidanceOptions.value,
+])
+function loadGuidanceOptions(): string[] {
+  try {
+    const value: unknown = JSON.parse(localStorage.getItem(guidanceStorageKey) ?? 'null')
+    return Array.isArray(value)
+      ? [
+          ...new Set(
+            value
+              .filter((item): item is string => typeof item === 'string')
+              .map((item) => item.trim())
+              .filter(Boolean),
+          ),
+        ]
+      : []
+  } catch {
+    return []
+  }
+}
+function saveGuidanceOptions(): void {
+  try {
+    localStorage.setItem(guidanceStorageKey, JSON.stringify(guidanceOptions.value))
+  } catch {
+    /* Preference storage is optional. */
+  }
+}
+function addGuidanceOption(): void {
+  const value = guidanceOptionDraft.value.trim()
+  if (!value || activityGuidanceOptions.value.includes(value)) return
+  guidanceOptions.value = [...guidanceOptions.value, value]
+  guidanceOptionDraft.value = ''
+  saveGuidanceOptions()
+}
+function removeGuidanceOption(value: string): void {
+  guidanceOptions.value = guidanceOptions.value.filter((option) => option !== value)
+  saveGuidanceOptions()
+}
 function blankItem(): EditableItem {
   return {
     key: ++key,
@@ -258,6 +307,8 @@ async function load(): Promise<void> {
   existingId.value = ''
   preview.value = undefined
   previewError.value = ''
+  guidanceOptionDraft.value = ''
+  guidanceOptions.value = loadGuidanceOptions()
   try {
     const [value] = await Promise.all([
       route.params.id ? qaApi.get(String(route.params.id)) : Promise.resolve(undefined),
@@ -738,6 +789,61 @@ onUnmounted(() => window.removeEventListener('beforeunload', unload))
             {{ duplicates }} entri menggunakan kode yang sama. Semua tetap disimpan sebagai
             pengujian terpisah.
           </p>
+          <div class="guidance-settings stack">
+            <div>
+              <h3>Opsi PIC / Guidance</h3>
+              <p class="small muted">
+                Tambahkan pilihan yang akan muncul di dropdown setiap activity. Nilai yang sudah
+                dipakai tetap tersedia otomatis.
+              </p>
+            </div>
+            <div class="qa-form-grid guidance-option-form">
+              <UiInput
+                v-model="guidanceOptionDraft"
+                label="Tambah opsi PIC / Guidance"
+                maxlength="10000"
+                placeholder="Nama PIC atau guidance"
+                @keydown.enter.prevent="addGuidanceOption"
+              />
+              <div class="guidance-option-submit">
+                <UiButton
+                  variant="secondary"
+                  :disabled="busy || !guidanceOptionDraft.trim()"
+                  @click="addGuidanceOption"
+                >
+                  Tambah opsi
+                </UiButton>
+              </div>
+            </div>
+            <div
+              v-if="guidanceOptions.length"
+              class="qa-actions"
+              aria-label="Opsi PIC / Guidance yang disimpan"
+            >
+              <span
+                v-for="option in guidanceOptions"
+                :key="option"
+                class="guidance-option"
+              >
+                <span>{{ option }}</span>
+                <UiButton
+                  variant="ghost"
+                  size="sm"
+                  :disabled="busy"
+                  :label="`Hapus opsi ${option}`"
+                  @click="removeGuidanceOption(option)"
+                >
+                  Hapus
+                </UiButton>
+              </span>
+            </div>
+            <p
+              v-if="existingGuidanceOptions.length"
+              class="small muted"
+            >
+              Nilai yang sudah ada di activity: {{ existingGuidanceOptions.join(', ') }}
+            </p>
+          </div>
           <ActivityEditor
             v-for="(item, index) in items"
             :key="item.key"
@@ -747,6 +853,7 @@ onUnmounted(() => window.removeEventListener('beforeunload', unload))
             :count="items.length"
             :busy="busy"
             :fields="fields.activity"
+            :guidance-options="activityGuidanceOptions"
             @remove="requestRemove(index)"
             @move="move(index, $event)"
           />
@@ -991,7 +1098,7 @@ onUnmounted(() => window.removeEventListener('beforeunload', unload))
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
-    font-size: 13px;
+    font-size: 14px;
   }
 }
 </style>

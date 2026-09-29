@@ -57,23 +57,25 @@ async function move(event: KeyboardEvent, index: number): Promise<void> {
 <style scoped>
 .tab-list {
   display: flex;
-  gap: 24px;
+  gap: 4px;
   overflow-x: auto;
   border-bottom: 1px solid var(--color-border);
 }
 .tab-list button {
   border: 0;
-  border-bottom: 2px solid transparent;
+  border-bottom: 1px solid transparent;
   min-height: 48px;
+  padding-inline: 14px;
   background: transparent;
   font-size: 14px;
   white-space: nowrap;
   color: var(--color-text-muted);
 }
 .tab-list button[aria-selected='true'] {
-  color: var(--color-primary);
+  color: var(--color-on-primary);
+  background: var(--color-primary);
   border-bottom-color: var(--color-primary);
-  font-weight: 500;
+  font-weight: 600;
 }
 .tab-panel {
   padding-top: 24px;

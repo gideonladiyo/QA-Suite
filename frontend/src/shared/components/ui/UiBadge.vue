@@ -12,9 +12,13 @@ withDefaults(defineProps<{ tone?: 'neutral' | 'success' | 'warning' | 'danger' |
   align-items: center;
   gap: 5px;
   padding: 3px 9px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 500;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   color: var(--color-text-muted);
   background: var(--color-surface-subtle);
   white-space: nowrap;

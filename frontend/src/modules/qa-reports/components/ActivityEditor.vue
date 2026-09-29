@@ -13,6 +13,7 @@ const props = defineProps<{
   count: number
   busy: boolean
   fields: string[]
+  guidanceOptions: readonly string[]
 }>()
 const summary = computed(() =>
   [
@@ -39,6 +40,9 @@ function selectEnvironment(value: string): void {
 }
 function selectResult(value: string): void {
   item.value.result = value === '__custom' ? '' : value
+}
+function selectGuidance(value: string): void {
+  item.value.pic_guidance = value === '__custom' ? null : value
 }
 </script>
 <template>
@@ -267,13 +271,28 @@ function selectResult(value: string): void {
             maxlength="10000"
             @update:model-value="item.next_step = $event || null"
           />
-          <UiTextarea
-            :model-value="item.pic_guidance ?? ''"
-            label="PIC / Guidance (manmonth)"
-            :rows="3"
-            maxlength="10000"
-            @update:model-value="item.pic_guidance = $event || null"
-          />
+          <div class="stack compact-stack">
+            <UiSelect
+              :model-value="
+                props.guidanceOptions.includes(item.pic_guidance ?? '')
+                  ? (item.pic_guidance ?? '')
+                  : '__custom'
+              "
+              label="PIC / Guidance (manmonth)"
+              :options="[
+                ...props.guidanceOptions.map((value) => ({ value, label: value })),
+                { value: '__custom', label: 'Custom' },
+              ]"
+              @update:model-value="selectGuidance"
+            />
+            <UiInput
+              v-if="!props.guidanceOptions.includes(item.pic_guidance ?? '')"
+              :model-value="item.pic_guidance ?? ''"
+              label="PIC / Guidance custom"
+              maxlength="10000"
+              @update:model-value="item.pic_guidance = $event || null"
+            />
+          </div>
           <UiTextarea
             :model-value="item.deliverable ?? ''"
             label="Deliverable (manmonth)"
@@ -296,7 +315,7 @@ function selectResult(value: string): void {
   gap: 20px;
 }
 legend {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-primary);
   padding-right: 16px;

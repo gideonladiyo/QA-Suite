@@ -180,16 +180,21 @@ table {
   border-collapse: collapse;
   text-align: left;
   font-size: 14px;
+  font-variant-numeric: tabular-nums;
 }
 th {
   color: var(--color-text-muted);
-  font-size: 12px;
-  font-weight: 500;
-  background: var(--color-surface-subtle);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: transparent;
+  border-block: 1px solid var(--color-border-strong);
 }
 th,
 td {
-  padding: 12px 16px;
+  padding: 14px 16px;
   white-space: nowrap;
 }
 th button {
@@ -203,10 +208,10 @@ th button {
   background: transparent;
 }
 tbody tr + tr {
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-ledger-line);
 }
 tbody tr:hover {
-  background: var(--color-surface-subtle);
+  background: var(--color-surface-accent);
 }
 .table-footer {
   display: flex;
@@ -215,7 +220,7 @@ tbody tr:hover {
   gap: 12px;
   margin-top: 12px;
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 13px;
   flex-wrap: wrap;
 }
 </style>

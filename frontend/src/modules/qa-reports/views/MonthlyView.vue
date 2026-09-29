@@ -299,7 +299,7 @@ onMounted(load)
   gap: 24px;
 }
 dt {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-text-muted);
 }
 .metric-strip dd {
@@ -322,7 +322,7 @@ dt {
   min-width: 0;
   gap: 10px;
   text-align: center;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--color-text-muted);
 }
 .bar-track {
@@ -339,7 +339,7 @@ dt {
 }
 .trend-details {
   margin-top: 24px;
-  font-size: 13px;
+  font-size: 14px;
 }
 summary {
   cursor: pointer;

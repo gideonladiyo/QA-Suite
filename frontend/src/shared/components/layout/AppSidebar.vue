@@ -22,19 +22,21 @@ function selected(path: string): boolean {
     <RouterLink
       to="/"
       class="product-brand"
-      aria-label="QA Portal, dashboard"
+      aria-label="Workbench, dashboard"
     >
-      <span class="product-mark">
-        q
-        <span>.</span>
+      <span
+        class="product-mark"
+        aria-hidden="true"
+      >
+        W/
       </span>
       <span class="brand-copy">
-        QA Portal
-        <small>Personal workspace</small>
+        Workbench
+        <small>LOCAL WORKSPACE</small>
       </span>
     </RouterLink>
     <div class="sidebar-content">
-      <p class="nav-label">WORKSPACE</p>
+      <p class="nav-label">INDEX / WORKSPACE</p>
       <nav aria-label="Navigasi utama">
         <RouterLink
           v-for="item in primaryNavigation"
@@ -47,8 +49,8 @@ function selected(path: string): boolean {
         >
           <component
             :is="item.icon"
-            :size="20"
-            :weight="selected(item.path) ? 'duotone' : 'regular'"
+            :size="19"
+            :weight="selected(item.path) ? 'fill' : 'regular'"
             aria-hidden="true"
           />
           <span class="nav-copy">{{ item.label }}</span>
@@ -69,7 +71,7 @@ function selected(path: string): boolean {
         >
           <component
             :is="item.icon"
-            :size="20"
+            :size="19"
             aria-hidden="true"
           />
           <span class="nav-copy">{{ item.label }}</span>
@@ -78,12 +80,12 @@ function selected(path: string): boolean {
     </div>
     <div class="sidebar-footer">
       <PhDesktop
-        :size="20"
+        :size="18"
         aria-hidden="true"
       />
       <div class="footer-copy">
-        <strong>Workspace lokal</strong>
-        <small>Di perangkatmu sendiri</small>
+        <strong>Berjalan lokal</strong>
+        <small>Data tetap di perangkatmu</small>
       </div>
       <UiButton
         v-if="!mobile"
@@ -94,7 +96,7 @@ function selected(path: string): boolean {
       >
         <component
           :is="ui.sidebarCollapsed ? PhArrowRight : PhArrowLeft"
-          :size="16"
+          :size="15"
         />
       </UiButton>
     </div>
@@ -104,120 +106,133 @@ function selected(path: string): boolean {
 .app-sidebar {
   height: 100%;
   overflow: hidden;
-  background: var(--color-surface);
+  background: var(--color-sidebar);
+  color: var(--color-sidebar-text);
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--color-border);
+  border-right: 1px solid color-mix(in srgb, var(--color-sidebar-text) 18%, transparent);
 }
 .product-brand {
   display: flex;
   align-items: center;
-  gap: 11px;
-  height: 100px;
-  padding: 24px;
+  gap: 13px;
+  min-height: 112px;
+  padding: 27px 22px;
   flex-shrink: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-sidebar-text) 18%, transparent);
 }
 .product-mark {
   display: grid;
   place-items: center;
-  position: relative;
-  width: 37px;
-  height: 39px;
-  background: var(--color-ink);
-  color: var(--color-text-on-ink);
-  border-radius: 9px;
-  font-weight: 600;
-  font-size: 27px;
-  line-height: 1;
-  padding-bottom: 4px;
-}
-.product-mark span {
-  color: var(--color-blush);
-  position: absolute;
-  right: 6px;
-  bottom: 7px;
-  font-size: 23px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid color-mix(in srgb, var(--color-sidebar-text) 58%, transparent);
+  border-radius: 50%;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: -0.08em;
 }
 .brand-copy {
-  font-size: 19px;
+  font-size: 20px;
   font-weight: 600;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.025em;
   white-space: nowrap;
 }
 .brand-copy small {
   display: block;
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.1px;
-  color: var(--color-text-muted);
-  margin-top: 1px;
+  margin-top: 4px;
+  color: var(--color-sidebar-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
 }
 .sidebar-content {
-  padding: 22px 16px;
+  padding: 26px 14px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior-y: contain;
 }
 .nav-label {
-  color: var(--color-text-muted);
+  margin: 0 10px 13px;
+  color: var(--color-sidebar-muted);
+  font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  margin: 0 12px 14px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
 }
 nav {
   display: grid;
-  gap: 5px;
+  gap: 3px;
 }
 .nav-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
-  min-height: 46px;
-  border-radius: 8px;
-  color: var(--color-text-muted);
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: var(--radius-control);
+  color: var(--color-sidebar-muted);
   font-size: 14px;
-  transition: background var(--duration-fast);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 .nav-item:hover {
-  background: var(--color-surface-subtle);
-  color: var(--color-text);
+  color: var(--color-sidebar-text);
+  background: color-mix(in srgb, var(--color-sidebar-text) 7%, transparent);
+  transform: translateX(2px);
 }
 .nav-item.selected {
-  background: color-mix(in srgb, var(--color-primary) 9%, var(--color-surface));
-  color: var(--color-primary);
-  font-weight: 500;
+  background: var(--color-sidebar-active);
+  color: var(--color-ink);
+  font-weight: 600;
+}
+.nav-item.selected::before {
+  content: '';
+  position: absolute;
+  inset: 10px auto 10px -14px;
+  width: 3px;
+  background: var(--color-accent);
 }
 .secondary-nav {
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid var(--color-border);
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid color-mix(in srgb, var(--color-sidebar-text) 16%, transparent);
 }
 .sidebar-footer {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 20px 16px;
-  border-top: 1px solid var(--color-border);
-  color: var(--color-text-muted);
+  padding: 18px 14px;
+  border-top: 1px solid color-mix(in srgb, var(--color-sidebar-text) 18%, transparent);
+  color: var(--color-sidebar-muted);
+}
+.sidebar-footer :deep(.ui-button) {
+  color: var(--color-sidebar-muted);
+}
+.sidebar-footer :deep(.ui-button:hover) {
+  color: var(--color-sidebar-text);
+  background: color-mix(in srgb, var(--color-sidebar-text) 8%, transparent);
 }
 .footer-copy {
   flex: 1;
 }
 .footer-copy strong {
   display: block;
-  font-size: 12px;
-  color: var(--color-text);
+  color: var(--color-sidebar-text);
+  font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
 }
 .footer-copy small {
   display: block;
-  font-size: 11px;
   margin-top: 3px;
+  font-size: 11px;
   white-space: nowrap;
 }
 .is-collapsed .nav-copy,
@@ -228,21 +243,25 @@ nav {
   display: none;
 }
 .is-collapsed .product-brand {
-  padding: 20px;
+  justify-content: center;
+  padding-inline: 12px;
 }
 .is-collapsed .sidebar-content {
-  padding: 24px 12px;
+  padding: 26px 10px;
 }
-.is-collapsed .nav-item {
-  justify-content: center;
-}
+.is-collapsed .nav-item,
 .is-collapsed .sidebar-footer {
   justify-content: center;
+}
+.is-collapsed .nav-item.selected::before {
+  left: -10px;
 }
 .is-mobile {
   height: auto;
   overflow: visible;
   border: 0;
+  background: transparent;
+  color: var(--color-text);
 }
 .is-mobile .product-brand {
   display: none;
@@ -250,6 +269,24 @@ nav {
 .is-mobile .sidebar-content {
   overflow: visible;
   padding: 0 0 20px;
+}
+.is-mobile .nav-label,
+.is-mobile .nav-item,
+.is-mobile .sidebar-footer,
+.is-mobile .footer-copy strong {
+  color: var(--color-text-muted);
+}
+.is-mobile .nav-item.selected {
+  color: var(--color-primary);
+  background: var(--color-surface-subtle);
+}
+.is-mobile .nav-item:hover {
+  color: var(--color-text);
+  background: var(--color-surface-subtle);
+}
+.is-mobile .secondary-nav,
+.is-mobile .sidebar-footer {
+  border-color: var(--color-border);
 }
 .is-mobile .sidebar-footer {
   padding-bottom: 0;

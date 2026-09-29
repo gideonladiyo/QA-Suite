@@ -13,14 +13,14 @@ export interface SavedPalette {
 export const savedPalettesStorageKey = 'qa-portal:saved-color-palettes'
 export const savedPalettesLimit = 20
 export const defaultPalette: Palette = {
-  ink: '#403d88',
-  violet: '#8b639b',
-  mauve: '#af719d',
-  blush: '#f8b2b2',
+  ink: '#17382d',
+  violet: '#60766b',
+  mauve: '#b54a25',
+  blush: '#e8dfcc',
 }
 // Curated combinations of Material 2014 swatches, not complete Material themes.
 export const palettePresets = [
-  { name: 'Portal original', colors: defaultPalette },
+  { name: 'Workbench', colors: defaultPalette },
   {
     name: 'Ocean',
     colors: { ink: '#1565c0', violet: '#00838f', mauve: '#5e35b1', blush: '#b3e5fc' },
@@ -133,8 +133,8 @@ function onColor(color: string): string {
 }
 
 export function paletteTokens(palette: Palette, dark: boolean): Record<string, string> {
-  const page = dark ? '#151719' : '#fafafa'
-  const surface = dark ? '#202124' : '#ffffff'
+  const page = dark ? '#111713' : '#f1efe7'
+  const surface = dark ? '#18211b' : '#fbfaf4'
   const subtle = mix(palette.ink, surface, dark ? 0.88 : 0.96)
   const panel = mix(palette.mauve, surface, dark ? 0.82 : 0.92)
   const highlight = mix(palette.blush, '#ffffff', 0.65)
@@ -153,11 +153,11 @@ export function paletteTokens(palette: Palette, dark: boolean): Record<string, s
     '--color-surface': surface,
     '--color-surface-subtle': subtle,
     '--color-surface-accent': accentSurface,
-    '--color-text': dark ? '#f1f3f4' : '#202124',
-    '--color-text-muted': readable(dark ? '#bdc1c6' : '#5f6368', backgrounds, dark),
-    '--color-text-on-ink': '#ffffff',
-    '--color-border': dark ? '#454a52' : '#dadce0',
-    '--color-border-strong': dark ? '#646b75' : '#aeb4bc',
+    '--color-text': dark ? '#edf1e9' : '#1b211d',
+    '--color-text-muted': readable(dark ? '#bdc1c6' : '#465149', backgrounds, dark),
+    '--color-text-on-ink': '#fffdf4',
+    '--color-border': dark ? '#344239' : '#b7bbb2',
+    '--color-border-strong': dark ? '#56645b' : '#7f887f',
     '--color-primary': primary,
     '--color-primary-hover': mix(primary, dark ? '#ffffff' : '#000000', 0.12),
     '--color-on-primary': onColor(primary),
@@ -168,6 +168,11 @@ export function paletteTokens(palette: Palette, dark: boolean): Record<string, s
     '--color-brand-muted': secondary,
     '--color-brand-panel': panel,
     '--color-on-blush': onColor(highlight),
+    '--color-sidebar': mix(palette.ink, dark ? '#000000' : '#10251d', dark ? 0.56 : 0.2),
+    '--color-sidebar-text': '#f7f3e7',
+    '--color-sidebar-muted': dark ? '#9fb2a7' : '#ced9d2',
+    '--color-sidebar-active': dark ? '#e8e5da' : '#f3f0e5',
+    '--color-ledger-line': dark ? '#2c3931' : '#c7c9c0',
   }
 }
 

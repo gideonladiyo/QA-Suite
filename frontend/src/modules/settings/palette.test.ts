@@ -44,12 +44,18 @@ describe('workspace color palettes', () => {
   })
   it('imports four HEX colors or supported palette URLs without fetching a page', () => {
     const fetch = vi.spyOn(globalThis, 'fetch')
+    const importedWorkbench = {
+      ink: '#17382d',
+      violet: '#b54a25',
+      mauve: '#60766b',
+      blush: '#e8dfcc',
+    }
     for (const input of [
-      '#F8B2B2, #AF719D; #8B639B\n#403D88',
-      'https://colorhunt.co/palette/f8b2b2af719d8b639b403d88',
-      'https://coolors.co/f8b2b2-af719d-8b639b-403d88',
+      '#E8DFCC, #B54A25; #60766B\n#17382D',
+      'https://colorhunt.co/palette/e8dfccb54a2560766b17382d',
+      'https://coolors.co/e8dfcc-b54a25-60766b-17382d',
     ])
-      expect(importPalette(input)).toEqual(defaultPalette)
+      expect(importPalette(input)).toEqual(importedWorkbench)
     for (const input of [
       '#fff #000',
       '#fff #000 #f00 #0f0 #00f',
@@ -189,7 +195,7 @@ describe('workspace color palettes', () => {
     expect(ui.colorPalette).toEqual(ocean)
     expect(wrapper.text()).toContain('Palet aktif: Ocean')
     expect(wrapper.text()).toContain('Palet diterapkan dan tersimpan')
-    await choose('Portal original')
+    await choose('Workbench')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     expect(ui.colorPalette).toBeNull()
@@ -255,7 +261,7 @@ describe('workspace color palettes', () => {
     ])
     expect(wrapper.text()).toContain('Brand QA disimpan')
 
-    await button('Portal original').trigger('click')
+    await button('Workbench').trigger('click')
     await wrapper.get('[aria-label="Gunakan palet Brand QA"]').trigger('click')
     expect(useUiStore().colorPalette).toBeNull()
     expect(wrapper.get('[aria-label="Preview palet"]').attributes('data-palette')).toBeUndefined()

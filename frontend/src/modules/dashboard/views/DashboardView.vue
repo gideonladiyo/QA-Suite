@@ -1,26 +1,23 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import {
-  PhArrowUpRight,
   PhArrowRight,
+  PhArrowUpRight,
   PhClipboardText,
   PhDatabase,
-  PhLockKey,
-  PhStack,
-  PhCheck,
   PhImageSquare,
+  PhLockKey,
 } from '@phosphor-icons/vue'
-import UiCard from '../../../shared/components/ui/UiCard.vue'
 import UiBadge from '../../../shared/components/ui/UiBadge.vue'
-import UiButton from '../../../shared/components/ui/UiButton.vue'
 import { toolNavigation } from '../../../shared/navigation'
-import { useUiStore } from '../../../shared/stores/ui'
 import { localDate, qaApi, statusLabel, type ReportSummary } from '../../qa-reports/api'
 import { errorMessage } from '../../../shared/api'
 import UiErrorState from '../../../shared/components/ui/UiErrorState.vue'
+
 const todayReport = ref<ReportSummary>()
 const reportLoading = ref(true)
 const reportError = ref('')
+
 async function loadReport(): Promise<void> {
   reportLoading.value = true
   reportError.value = ''
@@ -33,7 +30,7 @@ async function loadReport(): Promise<void> {
     reportLoading.value = false
   }
 }
-const ui = useUiStore()
+
 const now = ref(new Date())
 const date = computed(() =>
   new Intl.DateTimeFormat('id-ID', {
@@ -42,6 +39,9 @@ const date = computed(() =>
     month: 'long',
     year: 'numeric',
   }).format(now.value),
+)
+const time = computed(() =>
+  new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit' }).format(now.value),
 )
 let timer: ReturnType<typeof setInterval>
 onMounted(() => {
@@ -53,38 +53,46 @@ onMounted(() => {
   }, 60_000)
 })
 onUnmounted(() => clearInterval(timer))
+
 const tools = [
-  { ...toolNavigation[0]!, description: 'Kirim request, periksa respons API.' },
-  { ...toolNavigation[1]!, description: 'Format dan validasi payload JSON.' },
+  { ...toolNavigation[0]!, description: 'Kirim request dan periksa respons API.' },
+  { ...toolNavigation[1]!, description: 'Format serta validasi JSON atau YAML.' },
   { ...toolNavigation[2]!, description: 'Susun data uji dari schema pilihanmu.' },
-  { ...toolNavigation[3]!, description: 'Lihat isi encoding dan claim token.' },
+  { ...toolNavigation[3]!, description: 'Baca Base64 dan claim token secara lokal.' },
 ]
 </script>
+
 <template>
-  <div class="page-header">
+  <header class="dashboard-heading">
     <div>
-      <p class="greeting">SATU WORKSPACE, LEBIH TERATUR</p>
-      <h1>Selamat datang kembali.</h1>
-      <p>Ruang untuk laporan QA, alat developer, dan koneksi project-mu.</p>
+      <h1>Dashboard</h1>
+      <p>Ringkasan kerja hari ini dan jalan cepat ke alat yang kamu butuhkan.</p>
     </div>
-    <time
-      class="today"
-      :datetime="now.toISOString()"
+    <div class="date-stamp">
+      <time :datetime="now.toISOString()">{{ date }}</time>
+      <span aria-hidden="true" />
+      <strong>{{ time }}</strong>
+    </div>
+  </header>
+
+  <div class="workspace-grid">
+    <section
+      class="ledger-panel report-panel"
+      aria-labelledby="report-title"
     >
-      {{ date }}
-    </time>
-  </div>
-  <div class="dashboard-grid">
-    <div class="main-column">
-      <UiCard
-        class="report-panel"
-        padding="none"
-      >
-        <div class="report-heading">
-          <div class="cluster">
-            <PhClipboardText :size="22" />
-            <h2>Laporan QA hari ini</h2>
-          </div>
+      <header class="ledger-header">
+        <div class="ledger-label">
+          <PhClipboardText
+            :size="17"
+            aria-hidden="true"
+          />
+          <span>QA REPORT / HARI INI</span>
+        </div>
+        <span class="register-code">WORK LOG</span>
+      </header>
+
+      <div class="report-body">
+        <div class="report-copy">
           <UiBadge>
             {{
               reportLoading
@@ -96,521 +104,557 @@ const tools = [
                     : 'Belum dibuat'
             }}
           </UiBadge>
-        </div>
-        <div class="report-content">
-          <div
-            class="report-symbol"
-            aria-hidden="true"
-          >
-            <PhClipboardText
-              :size="52"
-              weight="duotone"
-            />
-          </div>
-          <UiErrorState
-            v-if="reportError"
-            :message="reportError"
-            retryable
-            @retry="loadReport"
-          />
-          <h3 v-else>
+          <h2 id="report-title">
             {{
               todayReport
-                ? `${todayReport.item_count} aktivitas tercatat hari ini.`
-                : 'Mulai dari pengujian pertama.'
+                ? `${todayReport.item_count} aktivitas tercatat.`
+                : 'Laporan hari ini belum dibuat.'
             }}
-          </h3>
+          </h2>
           <p>
-            Catat aktivitas per tiket, tambahkan hasil pengujian, lalu susun laporan harian dari
-            satu tempat.
+            Catat pekerjaan per tiket, hasil pengujian, coverage, dan isu tanpa berpindah workspace.
           </p>
           <RouterLink
             :to="todayReport ? `/qa-reports/${todayReport.id}?edit=1` : '/qa-reports/new'"
-            class="report-link"
+            class="primary-link"
           >
-            {{ todayReport ? 'Buka laporan hari ini' : 'Input laporan harian' }}
+            {{ todayReport ? 'Buka laporan hari ini' : 'Buat laporan' }}
             <PhArrowRight :size="17" />
           </RouterLink>
         </div>
-        <div class="report-footer">
-          <span>Aktivitas harian</span>
-          <span>Preview laporan</span>
-          <span>Riwayat pengujian</span>
-        </div>
-      </UiCard>
-      <section
-        class="tools-section"
-        aria-labelledby="tools-title"
-      >
-        <div class="section-heading">
+
+        <UiErrorState
+          v-if="reportError"
+          :message="reportError"
+          retryable
+          @retry="loadReport"
+        />
+        <dl
+          v-else
+          class="report-register"
+        >
           <div>
-            <h2 id="tools-title">Alat untuk pekerjaan kecil.</h2>
-            <p>Empat utilitas yang akan hadir di workspace.</p>
+            <dt>Tanggal</dt>
+            <dd>{{ localDate(now) }}</dd>
           </div>
-          <span class="small muted">4 alat siap dipakai</span>
-        </div>
-        <div class="tools-list">
-          <RouterLink
-            v-for="tool in tools"
-            :key="tool.path"
-            :to="tool.path"
-            class="tool-row"
-          >
-            <span class="tool-icon">
-              <component
-                :is="tool.icon"
-                :size="23"
-                weight="duotone"
-              />
-            </span>
-            <span class="tool-copy">
-              <strong>{{ tool.label }}</strong>
-              <span>{{ tool.description }}</span>
-            </span>
-            <PhArrowUpRight
-              :size="18"
-              class="muted"
+          <div>
+            <dt>Aktivitas</dt>
+            <dd>{{ todayReport?.item_count ?? '—' }}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd>{{ todayReport ? statusLabel(todayReport.status) : 'Belum ada catatan' }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <footer class="ledger-note">
+        <span>Satu laporan per hari kerja</span>
+        <RouterLink to="/qa-reports">
+          Lihat riwayat
+          <PhArrowRight :size="14" />
+        </RouterLink>
+      </footer>
+    </section>
+
+    <aside
+      class="status-column"
+      aria-label="Status workspace"
+    >
+      <section class="ledger-panel status-panel">
+        <header class="ledger-header">
+          <div class="ledger-label">
+            <PhDatabase
+              :size="17"
+              aria-hidden="true"
             />
+            <span>KONEKSI DATA</span>
+          </div>
+          <span class="register-code">SUPABASE</span>
+        </header>
+        <div class="status-body">
+          <div>
+            <h2>Belum terhubung</h2>
+            <p>Pilih project sebelum menjalankan pekerjaan berbasis data.</p>
+          </div>
+          <RouterLink
+            to="/supabase-hub"
+            class="secondary-link"
+          >
+            Kelola koneksi
+            <PhArrowRight :size="15" />
           </RouterLink>
         </div>
       </section>
+
+      <section class="ledger-panel status-panel">
+        <header class="ledger-header">
+          <div class="ledger-label">
+            <PhLockKey
+              :size="17"
+              aria-hidden="true"
+            />
+            <span>VAULT</span>
+          </div>
+          <UiBadge tone="success">Terenkripsi</UiBadge>
+        </header>
+        <div class="status-body">
+          <div>
+            <h2>Vault terkunci</h2>
+            <p>Secret tetap tersamarkan sampai Master Lock dibuka.</p>
+          </div>
+          <RouterLink
+            to="/vault"
+            class="secondary-link"
+          >
+            Buka Vault
+            <PhArrowRight :size="15" />
+          </RouterLink>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <section
+    class="tools-ledger"
+    aria-labelledby="tools-title"
+  >
+    <header class="ledger-header">
+      <div>
+        <h2 id="tools-title">Utilitas developer</h2>
+        <p>Proses cepat yang berjalan langsung dari workspace lokal.</p>
+      </div>
+      <span class="register-code">4 ALAT / SIAP DIPAKAI</span>
+    </header>
+    <div class="tool-rows">
       <RouterLink
-        to="/photo-editor"
-        class="photo-editor-launch"
+        v-for="tool in tools"
+        :key="tool.path"
+        :to="tool.path"
+        class="tool-row"
       >
-        <span class="photo-editor-icon"><PhImageSquare :size="27" weight="duotone" /></span>
-        <span>
-          <strong>Edit gambar langsung di workspace</strong>
-          <small>Layer, mask, brush, adjustment, history, dan export. Semua diproses lokal.</small>
-        </span>
-        <PhArrowUpRight :size="18" />
+        <component
+          :is="tool.icon"
+          :size="20"
+          aria-hidden="true"
+        />
+        <strong>{{ tool.label }}</strong>
+        <span>{{ tool.description }}</span>
+        <PhArrowUpRight
+          :size="16"
+          aria-hidden="true"
+        />
       </RouterLink>
     </div>
-    <div class="side-column">
-      <UiCard
-        padding="md"
-        class="context-card"
-      >
-        <template #header>
-          <div class="section-heading">
-            <PhDatabase
-              :size="24"
-              weight="duotone"
-            />
-            <UiBadge>Belum terhubung</UiBadge>
-          </div>
-        </template>
-        <h3>Konteks project</h3>
-        <p>
-          Koneksi Supabase akan tampil di sini, supaya kamu selalu tahu project yang sedang
-          digunakan.
-        </p>
-        <RouterLink
-          to="/supabase-hub"
-          class="text-link"
-        >
-          Buka Supabase Hub
-          <PhArrowRight :size="15" />
-        </RouterLink>
-      </UiCard>
-      <UiCard
-        padding="md"
-        tone="outlined"
-        class="context-card"
-      >
-        <template #header>
-          <div class="section-heading">
-            <PhLockKey
-              :size="24"
-              weight="duotone"
-            />
-            <UiBadge tone="success">Terenkripsi</UiBadge>
-          </div>
-        </template>
-        <h3>Secret dan command penting</h3>
-        <p>Simpan password, token, catatan sensitif, dan command di balik Master Lock terpisah.</p>
-        <RouterLink
-          to="/vault"
-          class="text-link"
-        >
-          Buka Vault
-          <PhArrowRight :size="15" />
-        </RouterLink>
-      </UiCard>
-      <div class="shortcut-note">
-        <span class="shortcut-keys">
-          <kbd>Ctrl</kbd>
-          <span>+</span>
-          <kbd>K</kbd>
-        </span>
-        <p>
-          Lebih sedikit klik.
-          <br />
-          Langsung ke alat yang kamu cari.
-        </p>
-        <UiButton
-          variant="ghost"
-          size="sm"
-          @click="ui.paletteOpen = true"
-        >
-          Coba pencarian
-          <PhArrowUpRight :size="14" />
-        </UiButton>
-      </div>
-    </div>
-  </div>
-  <section class="foundation-strip">
-    <div class="foundation-icon">
-      <PhStack
-        :size="24"
-        weight="duotone"
+  </section>
+
+  <section
+    class="utility-strip"
+    aria-label="Alat tambahan"
+  >
+    <RouterLink
+      to="/photo-editor"
+      class="utility-link"
+    >
+      <PhImageSquare
+        :size="23"
+        aria-hidden="true"
       />
-    </div>
-    <div class="foundation-copy">
-      <h3>Fondasi antarmuka sudah tersedia.</h3>
-      <p>
-        Button, card, form, dialog, dan tabel menggunakan komponen yang sama di seluruh workspace.
-      </p>
-    </div>
+      <span>
+        <strong>Photo Editor</strong>
+        <small>Layer, mask, adjustment, dan export diproses lokal.</small>
+      </span>
+      <PhArrowUpRight :size="16" />
+    </RouterLink>
     <RouterLink
       to="/components"
-      class="text-link"
+      class="utility-link"
     >
-      Jelajahi komponen
-      <PhArrowRight :size="16" />
+      <span
+        class="component-mark"
+        aria-hidden="true"
+      >
+        UI
+      </span>
+      <span>
+        <strong>Sistem komponen</strong>
+        <small>Lihat fondasi antarmuka yang dipakai seluruh modul.</small>
+      </span>
+      <PhArrowUpRight :size="16" />
     </RouterLink>
   </section>
+
   <footer class="dashboard-footer">
-    <span>
-      <PhCheck :size="14" />
-      Font dan aset disajikan lokal
-    </span>
-    <span>Dibangun satu tahap setiap kali.</span>
+    <span>WORKBENCH / CALIBRATION LEDGER</span>
+    <span>LOCAL-FIRST · TANPA TELEMETRY</span>
   </footer>
 </template>
+
 <style scoped>
-.page-header .greeting {
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  color: var(--color-secondary);
-  font-weight: 600;
-  margin: 0 0 12px;
+.dashboard-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--color-border-strong);
 }
-.today {
-  font-size: 12px;
+.dashboard-heading p {
+  max-width: 62ch;
+  margin-top: 7px;
   color: var(--color-text-muted);
-  padding-top: 29px;
+  font-size: 14px;
+}
+.date-stamp {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
   white-space: nowrap;
 }
-.dashboard-grid {
+.date-stamp span {
+  width: 1px;
+  height: 18px;
+  background: var(--color-border-strong);
+}
+.date-stamp strong {
+  color: var(--color-text);
+  font-weight: 500;
+}
+.workspace-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.75fr) minmax(270px, 1fr);
-  gap: 28px;
+  grid-template-columns: minmax(0, 1.75fr) minmax(300px, 0.9fr);
+  gap: 18px;
 }
-.main-column,
-.side-column {
-  min-width: 0;
+.ledger-panel,
+.tools-ledger,
+.utility-strip {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-panel);
 }
-.report-panel {
-  overflow: hidden;
-  border-color: transparent;
-  background: var(--color-brand-panel);
-  color: var(--color-brand-text);
-}
-.report-heading {
-  padding: 22px 26px;
+.ledger-header {
+  min-height: 48px;
+  padding: 11px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-secondary) 17%, transparent);
+  border-bottom: 1px solid var(--color-border-strong);
 }
-.report-heading h2 {
-  font-size: 16px;
+.ledger-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
 }
-.report-content {
-  padding: 30px 30px 32px;
+.register-code {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.11em;
+  white-space: nowrap;
 }
-.report-symbol {
+.report-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(220px, 0.7fr);
+  min-height: 308px;
+}
+.report-copy {
+  padding: 34px 32px;
+  border-right: 1px solid var(--color-ledger-line);
+}
+.report-copy h2 {
+  max-width: 20ch;
+  margin-top: 20px;
+  font-size: clamp(25px, 3vw, 36px);
+}
+.report-copy p {
+  max-width: 52ch;
+  margin: 12px 0 28px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+.primary-link,
+.secondary-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 78px;
-  height: 78px;
-  border-radius: 16px;
-  background: var(--color-blush);
-  color: var(--color-on-blush);
-  margin-bottom: 21px;
+  gap: 9px;
+  min-height: 42px;
+  padding: 9px 14px;
+  border-radius: var(--radius-control);
+  font-size: 13px;
+  font-weight: 600;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
-.report-content h3 {
-  font-size: 22px;
+.primary-link {
+  color: var(--color-on-primary);
+  background: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+.primary-link:hover {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+}
+.secondary-link {
+  color: var(--color-primary);
+  background: transparent;
+  border: 1px solid var(--color-border-strong);
+}
+.secondary-link:hover {
+  border-color: var(--color-primary);
+  background: var(--color-surface-accent);
+}
+.report-register {
+  margin: 0;
+  padding: 24px 20px;
+}
+.report-register div {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--color-ledger-line);
+}
+.report-register dt {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.report-register dd {
+  margin: 0;
+  font-size: 13px;
   font-weight: 500;
-  letter-spacing: -0.5px;
 }
-.report-content p {
-  color: var(--color-brand-muted);
-  margin: 10px 0 22px;
-  font-size: 14px;
-  max-width: 42ch;
-  line-height: 1.7;
+.ledger-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 46px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--color-border-strong);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
 }
-.report-link {
+.ledger-note a {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  font-size: 13px;
-  font-weight: 500;
-  padding-bottom: 3px;
-  border-bottom: 1px solid var(--color-secondary);
-}
-.report-link:hover {
-  opacity: 0.8;
-}
-.report-footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 17px 26px;
-  border-top: 1px solid color-mix(in srgb, var(--color-secondary) 17%, transparent);
-  font-size: 11px;
-  color: var(--color-brand-muted);
-}
-.side-column {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-.context-card {
-  flex: 0;
-}
-.context-card :deep(.card-header) {
-  margin-bottom: 17px;
-}
-.context-card .section-heading {
-  margin-bottom: 0;
-  color: var(--color-secondary);
-}
-.context-card p {
-  color: var(--color-text-muted);
-  font-size: 13px;
-  line-height: 1.65;
-  margin: 10px 0 20px;
-}
-.context-card .text-link {
-  font-size: 12px;
-}
-.shortcut-note {
-  padding: 6px 24px 0;
-}
-.shortcut-keys {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-  color: var(--color-text-muted);
-  font-size: 12px;
-}
-.shortcut-keys kbd {
-  padding: 3px 7px;
-  background: var(--color-surface);
-}
-.shortcut-note p {
-  color: var(--color-text-muted);
-  font-size: 13px;
-  margin: 12px 0 8px;
-  line-height: 1.7;
-}
-.shortcut-note :deep(button) {
-  padding-left: 0;
-}
-.tools-section {
-  margin-top: 32px;
-}
-.photo-editor-launch {
-  min-height: 82px;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-top: 24px;
-  padding: 15px 17px;
-  border: 1px solid var(--color-border);
-  border-left: 3px solid var(--color-primary);
-  border-radius: var(--radius-control);
-  background: var(--color-surface);
-}
-.photo-editor-launch:hover {
-  border-color: var(--color-primary);
-}
-.photo-editor-launch > span:nth-child(2) {
-  flex: 1;
-}
-.photo-editor-launch strong,
-.photo-editor-launch small {
-  display: block;
-}
-.photo-editor-launch strong {
-  font-size: 14px;
-  font-weight: 500;
-}
-.photo-editor-launch small {
-  margin-top: 4px;
-  color: var(--color-text-muted);
-  font-size: 12px;
-}
-.photo-editor-icon {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
-  background: var(--color-brand-panel);
+  gap: 6px;
   color: var(--color-primary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
 }
-.tools-section h2 {
+.status-column {
+  display: grid;
+  gap: 18px;
+}
+.status-panel {
+  min-height: 0;
+}
+.status-body {
+  display: flex;
+  min-height: 150px;
+  padding: 22px 20px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 22px;
+}
+.status-body h2 {
+  font-size: 21px;
+}
+.status-body p {
+  max-width: 38ch;
+  margin-top: 8px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.tools-ledger {
+  margin-top: 18px;
+}
+.tools-ledger > .ledger-header {
+  align-items: flex-end;
+}
+.tools-ledger h2 {
   font-size: 18px;
 }
-.tools-section .section-heading p {
-  font-size: 13px;
+.tools-ledger .ledger-header p {
+  margin-top: 4px;
+  color: var(--color-text-muted);
+  font-size: 12px;
 }
-.tools-list {
+.tool-rows {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .tool-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 28px minmax(110px, 0.45fr) minmax(0, 1fr) auto;
   align-items: center;
-  gap: 16px;
-  min-height: 79px;
-  border-bottom: 1px solid var(--color-border);
-  padding: 15px 0;
+  gap: 12px;
+  min-height: 72px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-ledger-line);
+  transition: background-color var(--duration-fast) var(--ease-out);
 }
-.tool-row:last-child {
+.tool-row:nth-child(odd) {
+  border-right: 1px solid var(--color-ledger-line);
+}
+.tool-row:nth-last-child(-n + 2) {
   border-bottom: 0;
 }
-.tool-row:hover .tool-copy strong {
+.tool-row:hover {
+  background: var(--color-surface-accent);
+}
+.tool-row > svg:first-child {
   color: var(--color-primary);
 }
-.tool-icon {
-  display: flex;
-  padding: 11px;
-  background: var(--color-surface-subtle);
-  color: var(--color-primary);
-  border-radius: 10px;
+.tool-row strong {
+  font-size: 13px;
 }
-.tool-copy {
-  flex: 1;
-}
-.tool-copy strong {
-  display: block;
-  font-weight: 500;
-  font-size: 14px;
-}
-.tool-copy > span {
-  display: block;
+.tool-row span {
   color: var(--color-text-muted);
   font-size: 12px;
-  margin-top: 4px;
 }
-.foundation-strip {
+.utility-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 18px;
+}
+.utility-link {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 23px 0;
-  margin-top: 32px;
-  border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
+  gap: 13px;
+  min-height: 82px;
+  padding: 16px 18px;
 }
-.foundation-icon {
-  color: var(--color-secondary);
+.utility-link + .utility-link {
+  border-left: 1px solid var(--color-border-strong);
 }
-.foundation-copy {
+.utility-link:hover {
+  background: var(--color-surface-accent);
+}
+.utility-link > span:nth-child(2) {
   flex: 1;
 }
-.foundation-copy h3 {
+.utility-link strong,
+.utility-link small {
+  display: block;
+}
+.utility-link strong {
   font-size: 14px;
-  font-weight: 500;
 }
-.foundation-copy p {
-  margin-top: 5px;
-  font-size: 12px;
+.utility-link small {
+  margin-top: 4px;
   color: var(--color-text-muted);
+  font-size: 11px;
 }
-.foundation-strip .text-link {
-  font-size: 12px;
+.component-mark {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  font-size: 9px;
 }
 .dashboard-footer {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  margin-top: 20px;
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border);
   color: var(--color-text-muted);
-  font-size: 11px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.09em;
 }
-.dashboard-footer > span {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-@media (max-width: 1150px) {
-  .today {
-    display: none;
-  }
-  .dashboard-grid {
-    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr);
-    gap: 20px;
-  }
-  .report-heading {
-    padding: 20px;
-  }
-  .report-heading .cluster {
-    gap: 8px;
-  }
-  .report-heading h2 {
-    font-size: 14px;
-  }
-  .foundation-strip {
-    flex-wrap: wrap;
-  }
-}
-@media (max-width: 950px) {
-  .dashboard-grid {
+
+@media (max-width: 1080px) {
+  .workspace-grid {
     grid-template-columns: minmax(0, 1fr);
   }
-  .side-column {
-    display: grid;
+  .status-column {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin-top: 10px;
-  }
-  .shortcut-note {
-    grid-column: 1 / -1;
-    display: none;
   }
 }
-@media (max-width: 520px) {
-  .side-column {
+@media (max-width: 820px) {
+  .tool-rows {
     grid-template-columns: minmax(0, 1fr);
   }
-  .report-heading {
-    flex-wrap: wrap;
+  .tool-row:nth-child(odd) {
+    border-right: 0;
   }
-  .report-content {
-    padding: 26px 22px;
+  .tool-row:nth-last-child(2) {
+    border-bottom: 1px solid var(--color-ledger-line);
   }
-  .report-content h3 {
-    font-size: 20px;
-  }
-  .report-footer {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    column-gap: 20px;
-  }
-  .foundation-copy {
-    flex-basis: calc(100% - 50px);
-  }
-  .foundation-strip > .text-link {
-    margin-left: 42px;
-  }
-  .dashboard-footer {
+}
+@media (max-width: 680px) {
+  .dashboard-heading {
+    align-items: flex-start;
     flex-direction: column;
-    gap: 6px;
+  }
+  .date-stamp {
+    white-space: normal;
+  }
+  .report-body,
+  .status-column,
+  .utility-strip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .report-copy {
+    padding: 28px 20px;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-ledger-line);
+  }
+  .report-register {
+    padding: 12px 20px 20px;
+  }
+  .tool-row {
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+  }
+  .tool-row span {
+    grid-column: 2 / 3;
+  }
+  .tool-row > svg:last-child {
+    grid-column: 3;
+    grid-row: 1 / 3;
+  }
+  .utility-link + .utility-link {
+    border-left: 0;
+    border-top: 1px solid var(--color-border-strong);
+  }
+  .ledger-note,
+  .dashboard-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .register-code {
+    display: none;
   }
 }
 </style>

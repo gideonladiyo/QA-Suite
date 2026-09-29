@@ -9,22 +9,27 @@ const route = useRoute()
 </script>
 <template>
   <header class="app-topbar">
-    <UiButton
-      class="mobile-toggle"
-      variant="ghost"
-      icon-only
-      label="Buka navigasi"
-      @click="emit('menu')"
-    >
-      <PhList :size="22" />
-    </UiButton>
-    <div class="breadcrumb">
-      <span>Workspace</span>
-      <PhCaretRight
-        :size="12"
-        aria-hidden="true"
-      />
-      <strong>{{ route.meta.title ?? 'Halaman' }}</strong>
+    <div class="topbar-context">
+      <UiButton
+        class="mobile-toggle"
+        variant="ghost"
+        icon-only
+        label="Buka navigasi"
+        @click="emit('menu')"
+      >
+        <PhList :size="22" />
+      </UiButton>
+      <div
+        class="breadcrumb"
+        aria-label="Lokasi halaman"
+      >
+        <span>WORKBENCH</span>
+        <PhCaretRight
+          :size="11"
+          aria-hidden="true"
+        />
+        <strong>{{ route.meta.title ?? 'Halaman' }}</strong>
+      </div>
     </div>
     <div class="topbar-actions">
       <RouterLink
@@ -32,19 +37,18 @@ const route = useRoute()
         class="connection-context"
       >
         <PhDatabase
-          :size="16"
+          :size="15"
           aria-hidden="true"
         />
-        <span>Belum terhubung</span>
+        <span>Koneksi data: belum terhubung</span>
       </RouterLink>
-      <span class="topbar-divider" />
       <UiButton
-        variant="ghost"
+        variant="secondary"
         label="Cari halaman atau alat"
         @click="ui.paletteOpen = true"
       >
-        <PhMagnifyingGlass :size="18" />
-        <span class="search-label">Cari</span>
+        <PhMagnifyingGlass :size="17" />
+        <span class="search-label">Cari di Workbench</span>
         <kbd>Ctrl K</kbd>
       </UiButton>
     </div>
@@ -52,70 +56,79 @@ const route = useRoute()
 </template>
 <style scoped>
 .app-topbar {
+  position: sticky;
+  top: 0;
+  z-index: calc(var(--layer-header) - 1);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  min-height: 72px;
-  padding: 0 36px;
-  background: var(--color-page);
-  border-bottom: 1px solid var(--color-border);
+  gap: 18px;
+  min-height: 68px;
+  padding: 0 32px;
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent);
+  border-bottom: 1px solid var(--color-border-strong);
 }
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 13px;
-  color: var(--color-text-muted);
-}
-.breadcrumb strong {
-  font-weight: 500;
-  color: var(--color-text);
-}
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
+.topbar-context,
+.breadcrumb,
+.topbar-actions,
 .connection-context {
   display: flex;
-  gap: 7px;
   align-items: center;
-  font-size: 12px;
+}
+.breadcrumb {
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
   color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+.breadcrumb strong {
+  color: var(--color-text);
+  font-weight: 500;
+}
+.topbar-actions {
+  gap: 14px;
+}
+.connection-context {
+  gap: 7px;
+  padding-right: 14px;
+  border-right: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 13px;
 }
 .connection-context:hover {
   color: var(--color-primary);
 }
-.topbar-divider {
-  height: 18px;
-  width: 1px;
-  background: var(--color-border);
-}
 .mobile-toggle {
   display: none;
 }
+.app-topbar :deep(.button-secondary) {
+  min-height: 38px;
+  padding: 7px 10px;
+  background: transparent;
+  font-size: 13px;
+}
+.app-topbar kbd {
+  margin-left: 5px;
+}
 @media (max-width: 1000px) {
   .app-topbar {
-    padding: 0 24px;
+    padding: 0 22px;
   }
   .connection-context {
-    display: none;
-  }
-  .topbar-divider {
     display: none;
   }
 }
 @media (max-width: 767px) {
   .app-topbar {
-    padding: 0 12px;
-    gap: 8px;
-    min-height: 64px;
+    min-height: 60px;
+    padding: 0 10px;
   }
   .mobile-toggle {
     display: inline-flex;
   }
-  .breadcrumb {
+  .topbar-context {
     flex: 1;
   }
   .breadcrumb > span,
@@ -124,8 +137,9 @@ const route = useRoute()
   kbd {
     display: none;
   }
-  .topbar-actions {
-    gap: 0;
+  .app-topbar :deep(.button-secondary) {
+    width: 42px;
+    padding: 0;
   }
 }
 </style>

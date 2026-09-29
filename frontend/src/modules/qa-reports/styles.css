@@ -8,12 +8,13 @@
 .qa-filter-toggle {
   cursor: pointer;
   padding: 12px 0;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
 }
 .qa-nav a {
   padding: 12px 0;
   color: var(--color-text-muted);
-  font-size: 14px;
+  font-size: 15px;
 }
 .qa-nav a.router-link-exact-active {
   color: var(--color-primary);
@@ -36,6 +37,31 @@
   gap: 12px;
   align-items: center;
 }
+.guidance-settings {
+  padding: 18px 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+.guidance-settings h3 {
+  font-size: 14px;
+}
+.guidance-option-form {
+  align-items: end;
+}
+.guidance-option-submit {
+  display: flex;
+  align-items: end;
+  min-height: 100%;
+}
+.guidance-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 4px 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-subtle);
+}
 .qa-section {
   padding: 28px 0;
   border-top: 1px solid var(--color-border);
@@ -47,7 +73,7 @@
   flex-wrap: wrap;
   gap: 12px;
   padding-top: 20px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-text-muted);
 }
 .qa-wrap {
@@ -60,7 +86,7 @@
   border-left: 3px solid var(--color-secondary);
   color: var(--color-text-muted);
   line-height: 1.6;
-  font-size: 13px;
+  font-size: 14px;
 }
 .qa-link {
   color: var(--color-primary);
@@ -89,7 +115,7 @@
 }
 .template-fields textarea {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.65;
 }
 .placeholder-help summary,
@@ -133,7 +159,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
   background: var(--color-surface);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.65;
 }
 .template-form-actions {

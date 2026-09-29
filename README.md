@@ -1,4 +1,4 @@
-# Personal QA & Developer Utilities Portal
+# Workbench
 
 Workspace lokal berbasis Vue 3, Vite, TypeScript, Tailwind CSS, Pinia, dan Vue Router. Arah visual mengikuti [DESIGN.md](DESIGN.md).
 
@@ -27,7 +27,7 @@ docker compose up --build -d
 docker compose ps
 ```
 
-Buka [QA Portal](http://localhost:8080). Pada `APP_ENV=local` (konfigurasi bawaan), login dinonaktifkan agar workspace lokal tidak terkunci karena lupa password. Environment selain `local` tetap meminta akun lokal. Script setup menghasilkan secret aplikasi/database acak di `.env`, tidak mencetak nilainya, dan tidak menimpa file yang sudah ada. Python 3.11+ cukup untuk script setup; backend memakai Python 3.12 di container.
+Buka [Workbench](http://localhost:8080). Pada `APP_ENV=local` (konfigurasi bawaan), login dinonaktifkan agar workspace lokal tidak terkunci karena lupa password. Environment selain `local` tetap meminta akun lokal. Script setup menghasilkan secret aplikasi/database acak di `.env`, tidak mencetak nilainya, dan tidak menimpa file yang sudah ada. Python 3.11+ cukup untuk script setup; backend memakai Python 3.12 di container.
 
 Port hanya dipublikasikan ke loopback host. Nginx dan backend berjalan sebagai pengguna non-root. Routing SPA tetap bekerja saat membuka URL langsung atau refresh halaman. PostgreSQL dan backend tidak membuka port ke host. Jangan membagikan `.env` atau mempublikasikan port ke jaringan umum.
 
@@ -79,13 +79,13 @@ Perintah menjalankan migrasi, pytest, Ruff, dan mypy. Data uji memakai tmpfs dan
 
 ## Palet warna workspace
 
-Buka **Settings → Identitas workspace**. Pilih **Portal original**, **Ocean**, **Forest**, **Sunset**, atau **Slate**, periksa preview, lalu klik **Terapkan palet**. Pemilihan preset belum mengubah warna aplikasi sampai diterapkan. **Batalkan perubahan** mengembalikan preview ke palet aktif.
+Buka **Settings → Identitas workspace**. Pilih **Workbench**, **Ocean**, **Forest**, **Sunset**, atau **Slate**, periksa preview, lalu klik **Terapkan palet**. Pemilihan preset belum mengubah warna aplikasi sampai diterapkan. **Batalkan perubahan** mengembalikan preview ke palet aktif.
 
 Bagian **Sesuaikan warna atau impor palet** menyediakan color picker dan kode HEX untuk Utama, Sekunder, Aksen, dan Highlight. Tempel tepat empat kode HEX (3/6 digit, dipisahkan spasi/koma/titik koma) atau tautan Color Hunt/Coolors berisi empat warna, lalu **Muat ke preview**. Impor mengurutkan warna dari gelap ke terang; peran masing-masing warna bisa disesuaikan sebelum diterapkan. Tidak ada pengunduhan CSS, eksekusi tema, maupun permintaan jaringan saat impor.
 
 Preset tambahan memakai kombinasi swatch dari [Material Design 2014](https://m2.material.io/design/color/the-color-system.html), bukan implementasi penuh tema Material. Palet awal berasal dari [Color Hunt](https://colorhunt.co/palette/f8b2b2af719d8b639b403d88). Warna dasar dipertahankan dalam preferensi; turunannya disesuaikan untuk keterbacaan teks/tombol di mode terang maupun gelap. Warna status sukses, peringatan, dan error tetap terpisah.
 
-Palet aktif disimpan di localStorage browser ini (`qa-portal:color-palette`), bukan PostgreSQL. Bagian **Palet tersimpan** dapat menyimpan hingga 20 palet bernama di `qa-portal:saved-color-palettes`. Klik **Tambah palet**, lalu isi nama serta kode HEX Primary, Secondary, Accent, dan Highlight. Palet dapat dimuat ke preview, diedit lewat form yang sama, atau dihapus tanpa mengubah warna aktif sampai **Terapkan palet** diklik. Tema terang/gelap tetap pengaturan terpisah. Backup ZIP membawa tema, palet aktif, dan daftar palet dari browser yang membuat backup. Jika penyimpanan ditolak browser, palet aktif masih berlaku selama sesi dengan peringatan, sedangkan daftar palet tidak diubah. Pilih **Portal original → Terapkan palet** untuk menghapus override dan kembali ke token CSS asli. Tidak memerlukan migrasi database atau dependensi baru.
+Palet aktif disimpan di localStorage browser ini (`qa-portal:color-palette`), bukan PostgreSQL. Bagian **Palet tersimpan** dapat menyimpan hingga 20 palet bernama di `qa-portal:saved-color-palettes`. Klik **Tambah palet**, lalu isi nama serta kode HEX Primary, Secondary, Accent, dan Highlight. Palet dapat dimuat ke preview, diedit lewat form yang sama, atau dihapus tanpa mengubah warna aktif sampai **Terapkan palet** diklik. Tema terang/gelap tetap pengaturan terpisah. Backup ZIP membawa tema, palet aktif, dan daftar palet dari browser yang membuat backup. Jika penyimpanan ditolak browser, palet aktif masih berlaku selama sesi dengan peringatan, sedangkan daftar palet tidak diubah. Pilih **Workbench → Terapkan palet** untuk menghapus override dan kembali ke token CSS asli. Tidak memerlukan migrasi database atau dependensi baru.
 
 ## Pemakaian Vault
 

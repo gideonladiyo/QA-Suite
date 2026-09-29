@@ -11,6 +11,7 @@ import * as sharedApi from '../../shared/api'
 import { useAuthStore } from '../../shared/stores/auth'
 import AuthGate from '../../shared/components/auth/AuthGate.vue'
 import UiInput from '../../shared/components/ui/UiInput.vue'
+import UiSelect from '../../shared/components/ui/UiSelect.vue'
 import UiTextarea from '../../shared/components/ui/UiTextarea.vue'
 import ReportPreview from './components/ReportPreview.vue'
 import DeleteReportButton from './components/DeleteReportButton.vue'
@@ -144,6 +145,11 @@ describe('QA reports', () => {
     expect(document.activeElement?.textContent).toContain('2. Isian per aktivitas')
     await fields('Activity / kode tiket')[0]!.get('input').setValue('QA-A')
     await fields('Durasi pengerjaan (jam)')[0]!.get('input').setValue('1.5')
+    await fields('Tambah opsi PIC / Guidance')[0]!.get('input').setValue('Ghaza')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Tambah opsi')!
+      .trigger('click')
     await click('Tambah aktivitas')
     await fields('Activity / kode tiket')[1]!.get('input').setValue('QA-B')
     await fields('URL coverage 1')[0]!.get('input').setValue('https://example.test/a')
@@ -152,7 +158,10 @@ describe('QA reports', () => {
     await textareas('Current issues')[1]!.get('textarea').setValue('Issue B')
     await textareas('Obstacle (manmonth)')[0]!.get('textarea').setValue('Blocked A')
     await textareas('Next Step / Action (manmonth)')[0]!.get('textarea').setValue('Retry A')
-    await textareas('PIC / Guidance (manmonth)')[0]!.get('textarea').setValue('Lead A')
+    const guidance = wrapper
+      .findAllComponents(UiSelect)
+      .find((field) => field.props('label') === 'PIC / Guidance (manmonth)')!
+    await guidance.get('select').setValue('Ghaza')
     await textareas('Deliverable (manmonth)')[0]!.get('textarea').setValue('Evidence A')
     await fields('Current Status')[0]!.get('input').setValue('Retest A')
     await backStep(wrapper)
@@ -207,7 +216,7 @@ describe('QA reports', () => {
         1.5,
         'Blocked A',
         'Retry A',
-        'Lead A',
+        'Ghaza',
         'Evidence A',
       ],
     ])

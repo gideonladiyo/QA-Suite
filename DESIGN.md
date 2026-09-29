@@ -1,118 +1,67 @@
 # DESIGN.md
 
-## Personal QA and Developer Utilities Portal
+## Workbench
 
 Dokumen ini adalah source of truth untuk visual, UX, dan struktur komponen frontend. Semua halaman dan modul baru harus mengikuti keputusan di sini sebelum menambahkan pola visual baru.
 
-![Reference palette](<Color Hunt Palette f8b2b2af719d8b639b403d88.png>)
+![Approved dashboard direction](.impeccable/mocks/approved/calibration-ledger-dashboard.png)
 
 ## Design read
 
-Ini adalah internal developer dashboard untuk penggunaan harian. Produk harus terasa seperti instrumen kerja yang tenang, tajam, dan dapat dipercaya, bukan landing page marketing atau template dashboard generik.
+Ini adalah workspace teknis lokal untuk penggunaan harian. Produk harus terasa seperti buku kerja yang terkalibrasi: tenang, padat, tajam, dan dapat dipercaya. Ia bukan landing page marketing, kumpulan kartu SaaS, terminal cosplay, atau dashboard AI generik.
 
 ## Design dials
 
-- `DESIGN_VARIANCE: 4/10` - struktur rapi dengan sedikit offset pada area yang memang membutuhkan fokus.
+- `DESIGN_VARIANCE: 6/10` - grid ledger yang disiplin dengan komposisi panel yang tidak seragam.
 - `MOTION_INTENSITY: 3/10` - motion hanya untuk feedback dan perpindahan state.
 - `VISUAL_DENSITY: 7/10` - informasi cukup padat untuk workflow QA, tanpa membuat layar terasa seperti cockpit.
 
-Keputusan ini sengaja menjaga portal tetap cepat dipakai setiap hari. Keunikan datang dari palette, typography, dan ritme layout, bukan dari dekorasi yang mengganggu pekerjaan.
+Keputusan ini menjaga Workbench cepat dipakai setiap hari. Keunikan datang dari struktur ledger, margin register, aturan tipis, tipografi, dan ritme layout; bukan dekorasi yang mengganggu pekerjaan.
 
 ## Visual direction
 
-Nama internal: **Quiet Instrument Panel**.
+Nama internal: **Calibration Ledger**.
 
 Karakter visual:
 
-- Light-first dengan dukungan dark mode penuh.
-- Base surface netral dan bersih. Warna palette dipakai sebagai identitas, fokus, dan penanda konteks.
-- Border tipis dan grouping yang jelas lebih utama daripada shadow besar.
-- Layout berbasis CSS Grid. Tidak memakai kumpulan kartu identik yang berulang.
+- Light-first seperti kertas kerja tulang dengan dukungan dark mode penuh untuk penggunaan malam.
+- Sidebar hijau gelap berfungsi sebagai indeks tetap; kanvas kerja memakai surface hangat dan garis register.
+- Hijau hutan adalah warna tindakan, graphite untuk struktur, dan oranye karat hanya untuk perhatian penting.
+- Border tipis, field rows, dan grouping yang jelas lebih utama daripada shadow atau kartu dekoratif.
+- Layout berbasis CSS Grid dengan satu area kerja dominan dan area pendukung yang lebih kecil.
 - Tidak ada gradient sebagai latar utama, glassmorphism, glow, noise overlay, atau dekorasi yang tidak membawa informasi.
+- Arah Miura menyumbang disiplin struktur yang tetap utuh saat responsif; HyperCard menyumbang state aktif yang tegas. Keduanya tidak disalin secara literal.
 - Satu halaman tidak boleh terasa seperti berpindah produk saat masuk ke section lain.
 
 ## Color system
 
 ### Source palette
 
-Warna berikut diambil dari gambar palette yang ada di root project.
+Palette menggantikan palet ungu lama dan bersumber dari dunia ledger teknis.
 
-| Token | Hex | Peran |
-|---|---|---|
-| `--color-ink` | `#403D88` | Primary action, active navigation, focus ring, strong headings |
-| `--color-violet` | `#8B639B` | Secondary emphasis, selected state, secondary data series |
-| `--color-mauve` | `#AF719D` | Accent surface, links, soft emphasis |
-| `--color-blush` | `#F8B2B2` | Highlight surface, attention state, selected background |
+| Token            | Hex       | Peran                                  |
+| ---------------- | --------- | -------------------------------------- |
+| `--color-ink`    | `#17382D` | Sidebar, brand anchor, strong headings |
+| `--color-violet` | `#60766B` | Secondary emphasis and supporting data |
+| `--color-mauve`  | `#B54A25` | Rust accent for attention and focus    |
+| `--color-blush`  | `#E8DFCC` | Warm highlight surface                 |
 
 ### Semantic tokens
 
 Komponen tidak boleh memakai raw hex secara langsung. Semua warna harus melalui token semantic agar light dan dark mode dapat dirawat dari satu tempat.
 
-```css
-:root {
-  --color-page: #fbfafd;
-  --color-surface: #ffffff;
-  --color-surface-subtle: #f4f1f7;
-  --color-surface-accent: #f8b2b2;
-
-  --color-text: #211f32;
-  --color-text-muted: #68657a;
-  --color-text-on-ink: #ffffff;
-  --color-border: #ddd9e7;
-  --color-border-strong: #bdb7cf;
-
-  --color-primary: #403d88;
-  --color-primary-hover: #353270;
-  --color-on-primary: #ffffff;
-  --color-secondary: #8b639b;
-  --color-accent: #af719d;
-
-  --color-success: #2e7d5b;
-  --color-warning: #8b5919;
-  --color-danger: #ac394d;
-  --color-on-danger: #ffffff;
-  --color-info: #52629a;
-
-  --color-focus: #403d88;
-}
-
-[data-theme="dark"] {
-  --color-page: #171628;
-  --color-surface: #211f35;
-  --color-surface-subtle: #2b2942;
-  --color-surface-accent: #5d3f64;
-
-  --color-text: #f7f4fb;
-  --color-text-muted: #c4bed1;
-  --color-text-on-ink: #ffffff;
-  --color-border: #47425e;
-  --color-border-strong: #68607f;
-
-  --color-primary: #aaa5ee;
-  --color-primary-hover: #c2bef7;
-  --color-on-primary: #171628;
-  --color-secondary: #c19bca;
-  --color-accent: #e0a8c0;
-
-  --color-success: #74c69d;
-  --color-warning: #e4b46b;
-  --color-danger: #f29baa;
-  --color-on-danger: #171628;
-  --color-info: #aeb8ef;
-
-  --color-focus: #f8b2b2;
-}
-```
+Implementasi lengkap dan autoritatif berada di `frontend/src/shared/styles/tokens.css`. Token tambahan `--color-sidebar-*` dan `--color-ledger-line` menjaga shell, tabel, dan panel tetap satu dunia pada light/dark mode.
 
 Rules:
 
-- `--color-ink` is the brand anchor in light mode. Do not turn every surface into purple.
-- `--color-blush` is a highlight, not a body background for every card.
+- `--color-ink` adalah brand anchor dan base sidebar, bukan warna untuk setiap surface.
+- `--color-mauve` sekarang berperan sebagai aksen karat. Pakai sedikit untuk focus dan perhatian, bukan dekorasi.
+- `--color-blush` adalah warm highlight, bukan body background untuk setiap panel.
 - Success, warning, danger, and info are semantic exceptions. They may appear in status badges and messages, but never as decorative accents.
 - Color must never be the only way to communicate state. Add text, icon, or accessible label.
 - Primary button text must pass WCAG AA against its background. Use dark text on pale accent surfaces and white text only on sufficiently dark surfaces.
 - Use `--color-on-primary` for primary button text and `--color-on-danger` for danger button text. `--color-text-on-ink` is only for fixed dark brand surfaces, not for pale dark-mode buttons.
-- Warning and danger foregrounds are slightly darkened in light mode to keep small labels readable. The four source palette colors remain unchanged.
+- Warning dan danger tetap merupakan warna semantik, bukan turunan dekoratif dari aksen karat.
 - No pure black or pure white as page extremes. Use the tokens above to preserve hierarchy.
 
 ### Workspace palette customization
@@ -135,7 +84,8 @@ Font files should be self-hosted when added. Do not load fonts from a third-part
 Type rules:
 
 - Base body size is `16px` with line-height between `1.45` and `1.6`.
-- UI labels must not be smaller than `12px`.
+- UI labels must not be smaller than `12px`; uppercase monospace chrome may use `11px` only when it is secondary and high-contrast.
+- Light-mode supporting text must remain clearly legible against the warm page and surface colors; use the semantic muted token instead of opacity.
 - Page titles use strong weight and controlled scale. Avoid oversized headlines that waste the working area.
 - Use monospace only when the content is actually technical. Do not render the whole interface in monospace.
 - Do not use italic or mixed font families as decoration.
@@ -143,22 +93,22 @@ Type rules:
 
 Suggested scale:
 
-| Role | Size | Weight |
-|---|---:|---:|
-| Page title | 28-32px | 650-700 |
-| Section title | 20-24px | 650 |
-| Card title | 16-18px | 600 |
-| Body | 14-16px | 400-500 |
-| Metadata | 12-13px | 450-500 |
-| Code/data | 12-14px | 400-500 |
+| Role          |    Size |  Weight |
+| ------------- | ------: | ------: |
+| Page title    | 28-32px | 650-700 |
+| Section title | 20-24px |     650 |
+| Card title    | 16-18px |     600 |
+| Body          | 14-16px | 400-500 |
+| Metadata      | 12-13px | 450-500 |
+| Code/data     | 12-14px | 400-500 |
 
 ## Shape, border, and elevation
 
 Use one documented shape language:
 
-- Inputs and buttons: `8px` radius.
+- Inputs and buttons: `6px` radius.
 - Cards and panels: `12px` radius.
-- Status badges and compact tags: pill radius only when the element is genuinely a status or filter.
+- Status badges memakai bentuk label register bersudut ringan, bukan pill dekoratif.
 - Modal dialogs: `12px` radius.
 - Do not mix sharp cards, highly rounded buttons, and random pill containers without a functional reason.
 

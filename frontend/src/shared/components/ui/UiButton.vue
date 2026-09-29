@@ -60,12 +60,13 @@ const emit = defineEmits<{ click: [event: MouseEvent] }>()
   padding: 10px 16px;
   min-height: 44px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
   transition:
-    background-color var(--duration-fast),
-    border-color var(--duration-fast),
-    transform var(--duration-fast);
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 .button-content {
   display: inline-flex;
@@ -82,7 +83,7 @@ const emit = defineEmits<{ click: [event: MouseEvent] }>()
 }
 .button-secondary {
   border-color: var(--color-border-strong);
-  background: var(--color-surface);
+  background: transparent;
   color: var(--color-text);
 }
 .button-ghost {
@@ -96,9 +97,9 @@ const emit = defineEmits<{ click: [event: MouseEvent] }>()
 .button-secondary:hover:not(:disabled),
 .button-ghost:hover:not(:disabled),
 .button-quiet:hover:not(:disabled) {
-  background: var(--color-surface-subtle);
+  background: var(--color-surface-accent);
   color: var(--color-primary);
-  border-color: var(--color-border-strong);
+  border-color: var(--color-secondary);
 }
 .button-danger {
   border-color: var(--color-border-strong);
@@ -120,7 +121,8 @@ const emit = defineEmits<{ click: [event: MouseEvent] }>()
   transform: scale(0.98);
 }
 .ui-button:disabled {
-  opacity: 0.55;
+  opacity: 0.48;
+  filter: saturate(0.5);
 }
 .ui-button[aria-busy='true'] {
   opacity: 1;
