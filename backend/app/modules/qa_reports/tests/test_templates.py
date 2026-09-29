@@ -206,7 +206,7 @@ async def test_adaptive_activity_values_edit_reorder_and_backup(client: httpx.As
     )
     assert invalid.status_code == 422  # Standard format still requires a result.
     backup = (await client.get("/api/qa-reports/backup")).json()
-    assert backup["schema_version"] == 3
+    assert backup["schema_version"] == 4
     await client.delete(path + "?version=2")
     restored = await client.post("/api/qa-reports/restore", json=backup)
     assert restored.status_code == 200, restored.text

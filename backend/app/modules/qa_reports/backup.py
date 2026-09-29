@@ -1,9 +1,10 @@
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import uuid4
 
 from fastapi import Request
 from pydantic import ValidationError
-from sqlalchemy import select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -20,6 +21,39 @@ from app.modules.qa_reports.schemas import (
 from app.modules.qa_reports.service import apply_items
 
 MAX_BACKUP_BYTES = 10 * 1024 * 1024
+
+
+@dataclass(frozen=True)
+class BackupComparison:
+    existing_reports: int
+    existing_templates: int
+    new_reports: int
+    new_templates: int
+
+
+async def compare_backup(db: AsyncSession, backup: ReportBackup) -> BackupComparison:
+    dates = [report.report_date for report in backup.reports]
+    names = [template.name for template in backup.templates]
+    matching_reports = (
+        await db.scalar(
+            select(func.count()).select_from(DailyReport).where(DailyReport.report_date.in_(dates))
+        )
+        if dates
+        else 0
+    )
+    matching_templates = (
+        await db.scalar(
+            select(func.count()).select_from(ReportTemplate).where(ReportTemplate.name.in_(names))
+        )
+        if names
+        else 0
+    )
+    return BackupComparison(
+        existing_reports=await db.scalar(select(func.count()).select_from(DailyReport)) or 0,
+        existing_templates=await db.scalar(select(func.count()).select_from(ReportTemplate)) or 0,
+        new_reports=len(backup.reports) - (matching_reports or 0),
+        new_templates=len(backup.templates) - (matching_templates or 0),
+    )
 
 
 async def export_backup(db: AsyncSession) -> str:
@@ -41,7 +75,7 @@ async def export_backup(db: AsyncSession) -> str:
         )
     backup = ReportBackup(
         format="qa-portal-reports",
-        schema_version=3,
+        schema_version=4,
         exported_at=datetime.now(UTC),
         reports=[BackupReport.model_validate(report) for report in reports],
         templates=[
@@ -69,11 +103,13 @@ async def read_backup(request: Request) -> ReportBackup:
         return ReportBackup.model_validate_json(data)
     except ValidationError:
         raise AppError(
-            422, "Backup tidak valid. Gunakan file JSON backup QA Reports versi 1, 2, atau 3."
+            422, "Backup tidak valid. Gunakan file JSON backup QA Reports versi 1, 2, 3, atau 4."
         ) from None
 
 
-async def restore_backup(db: AsyncSession, backup: ReportBackup) -> RestoreResult:
+async def restore_backup(
+    db: AsyncSession, backup: ReportBackup, *, commit: bool = True
+) -> RestoreResult:
     templates_by_name = {
         template.name: template for template in (await db.scalars(select(ReportTemplate))).all()
     }
@@ -130,10 +166,22 @@ async def restore_backup(db: AsyncSession, backup: ReportBackup) -> RestoreResul
         db.add(report)
         restored += 1
     try:
-        await db.commit()
+        if commit:
+            await db.commit()
+        else:
+            await db.flush()
     except IntegrityError:
         await db.rollback()
         raise AppError(
             409, "Tanggal laporan berubah selama pemulihan. Tidak ada data dipulihkan; coba lagi."
         ) from None
     return RestoreResult(restored=restored, skipped=len(existing))
+
+
+async def overwrite_backup(
+    db: AsyncSession, backup: ReportBackup, *, commit: bool = True
+) -> RestoreResult:
+    await db.execute(delete(DailyReport))
+    await db.execute(delete(ReportTemplate))
+    await db.flush()
+    return await restore_backup(db, backup, commit=commit)

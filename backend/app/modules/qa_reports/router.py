@@ -93,6 +93,17 @@ async def csv_preview(
     return await service.monthly_csv_rows(db, month)
 
 
+@router.get("/monthly.manmonth.xlsx")
+async def manmonth_download(
+    db: Db, month: Annotated[str, Query(pattern=r"^\d{4}-\d{2}$")]
+) -> Response:
+    return Response(
+        await service.export_manmonth(db, month),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="manmonth-{month}.xlsx"'},
+    )
+
+
 @router.get("/delivery-options")
 async def options() -> DeliveryOptions:
     return delivery.delivery_options()

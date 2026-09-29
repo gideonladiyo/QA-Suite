@@ -14,6 +14,7 @@ from app.core.auth import router as auth_router
 from app.core.config import get_settings
 from app.core.database import engine
 from app.core.errors import AppError, ErrorBody
+from app.modules.backups.router import router as backup_router
 from app.modules.micro_utilities.router import router as micro_router
 from app.modules.qa_reports.router import router as qa_router
 from app.modules.vault import service as vault_service
@@ -87,6 +88,7 @@ async def health(db: Db) -> Health:
 
 
 app.include_router(auth_router)
+app.include_router(backup_router)
 app.include_router(qa_router)
 app.include_router(micro_router)
 app.include_router(vault_router)

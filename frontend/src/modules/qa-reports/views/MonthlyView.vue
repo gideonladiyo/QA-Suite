@@ -18,6 +18,7 @@ const error = ref('')
 const exportError = ref('')
 const loading = ref(false)
 const exporting = ref(false)
+const exportingManmonth = ref(false)
 const peak = computed(() => Math.max(1, ...(data.value?.trend.map((day) => day.count) ?? [])))
 const csvColumns: { key: keyof CsvPreviewRow; label: string }[] = [
   { key: 'date', label: 'Tanggal' },
@@ -60,6 +61,18 @@ async function exportCsv(): Promise<void> {
     exportError.value = errorMessage(cause)
   } finally {
     exporting.value = false
+  }
+}
+async function exportManmonth(): Promise<void> {
+  if (!data.value) return
+  exportingManmonth.value = true
+  exportError.value = ''
+  try {
+    downloadFile(await qaApi.manmonth(data.value.month), `manmonth-${data.value.month}.xlsx`)
+  } catch (cause) {
+    exportError.value = errorMessage(cause)
+  } finally {
+    exportingManmonth.value = false
   }
 }
 onMounted(load)
@@ -108,6 +121,14 @@ onMounted(load)
       @click="exportCsv"
     >
       Ekspor CSV
+    </UiButton>
+    <UiButton
+      variant="primary"
+      :disabled="!data || loading || !!error"
+      :loading="exportingManmonth"
+      @click="exportManmonth"
+    >
+      Ekspor manmonth
     </UiButton>
   </form>
   <UiSkeleton
@@ -241,9 +262,7 @@ onMounted(load)
         <div class="section-heading">
           <div>
             <h2>Preview CSV</h2>
-            <p>
-              Isi di bawah sama dengan file yang akan diunduh. Baris terbaru ditampilkan lebih dulu.
-            </p>
+            <p>Data diurutkan dari tanggal paling awal ke paling akhir dalam bulan terpilih.</p>
           </div>
         </div>
         <UiDataTable

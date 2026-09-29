@@ -8,7 +8,7 @@ This schema is the source of truth referenced by `AGENT_INSTRUCTIONS.md §6`. An
 
 ### Implemented migration scope
 
-Migration `0001_auth_qa` creates local authentication and the three QA tables below. `0003_qa_report_templates` adds reusable templates and a snapshot of the selected template to each report; deleting a template does not change existing reports. `0002_micro_tools` adds encrypted HTTP request history and dummy schema presets. `0006_vault` implements the Vault master lock, encrypted items, and access log; Supabase Hub remains planned. `daily_reports.version` is incremented under a row lock on save/finalize/send; a stale client version returns HTTP 409. DELETE checks the same version under a row lock before deleting the report and its children. QA-only JSON backup/restore requires no schema change; restoration creates new identities and skips existing report dates without overwriting them. It does not include Micro Tools or Vault data.
+Migration `0001_auth_qa` creates local authentication and the three QA tables below. `0003_qa_report_templates` adds reusable templates and a snapshot of the selected template to each report; deleting a template does not change existing reports. `0002_micro_tools` adds encrypted HTTP request history and dummy schema presets. `0006_vault` implements the Vault master lock, encrypted items, and access log. `0007_report_item_duration` adds optional activity duration, and `0008_report_item_manmonth` adds the remaining optional per-activity manmonth fields; Supabase Hub remains planned. `daily_reports.version` is incremented under a row lock on save/finalize/send; a stale client version returns HTTP 409. DELETE checks the same version under a row lock before deleting the report and its children. QA-only JSON backup/restore requires no schema change; restoration creates new identities and skips existing report dates without overwriting them. It does not include Micro Tools or Vault data.
 
 Authentication has two deliberate exceptions to the UUID/timestamp conventions: the single account uses `id = 1`, and sessions use a SHA-256 token digest as their primary key. Session rows expire after 12 hours and are revoked on logout. No plaintext password or session token is stored.
 
@@ -109,6 +109,11 @@ CREATE TABLE report_items (
     result              VARCHAR(50) NOT NULL,        -- 'Pass' | 'Fail' | 'In Progress' | 'Blocked' | custom
     current_status      VARCHAR(100),                 -- e.g. 'Passed prod' (may differ from result)
     current_issue       TEXT,
+    duration_hours      DOUBLE PRECISION,            -- optional hours for manmonth export
+    obstacle            TEXT,                        -- manmonth only; omitted from daily copy
+    next_step           TEXT,                        -- manmonth only; omitted from daily copy
+    pic_guidance        TEXT,                        -- manmonth only; omitted from daily copy
+    deliverable         TEXT,                        -- manmonth only; omitted from daily copy
     template_values     JSONB NOT NULL DEFAULT '{}', -- custom values per activity
     sort_order          INTEGER NOT NULL DEFAULT 0,   -- preserves manual ordering within a report
     created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),

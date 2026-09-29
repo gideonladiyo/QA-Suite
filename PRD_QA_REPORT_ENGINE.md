@@ -6,6 +6,8 @@
 
 ### Phase 3 implementation decisions — customizable report templates
 
+- Monthly reports also export a chronological Excel manmonth sheet. Each activity always exposes optional duration, obstacle, next step/action, PIC/guidance, and deliverable fields without changing the copyable daily report; older activities export with blank values.
+
 - `/qa-reports/templates` lists reusable templates in a sortable, paginated table with use/edit/delete actions. Creation (`/qa-reports/templates/new`) and editing (`/qa-reports/templates/:templateId/edit`) use separate pages with a starter format, placeholder insertion, live sample preview, inline validation, unsaved-change protection, and a "Simpan & buat laporan" shortcut. Ordinary save returns to the list. Concurrent edits use the template's `updated_at` timestamp and a row lock; stale edits return 409.
 - Report placeholders: `{{report_title}}`, `{{report_date}}`, `{{author_name}}`. Activity fields (`{{activity_code}}`, `{{environment}}`, `{{result}}`, `{{coverage_links}}`, `{{current_issue}}`, `{{current_status}}`) appear inside non-nested `{{#activities}}...{{/activities}}` blocks. Multiple blocks support separate summary, coverage, issue, and status sections.
 - All formats share a template-driven flow: identity (date/title for storage, author for the standard format or when referenced, plus report-wide custom fields), then activities only if the template contains activity blocks. Activity fields follow their first appearance in the template, without duplicate inputs for repeated sections. Unused built-ins and coverage controls are hidden. Preview/save appear on the last step. Report-only templates need no activities. The standard format also uses two steps, deriving activity fields from the starter template without changing the existing export format. Next/save actions stay in normal page flow, never sticky.
@@ -13,7 +15,7 @@
 - A report can choose the standard format or a saved template in step 1. Using a template from the library or saving a new report remembers the chosen template ID in this browser; no report contents are persisted in browser storage. Underscores escaped by pasted Markdown are normalized inside placeholders only.
 - The selected template body and name are snapshotted on save. Editing a saved report preserves that snapshot unless the user explicitly selects another format. Deleting the source template leaves the snapshot and custom values intact. Legacy reports retain the standard format.
 - Template text is preserved for Markdown/plaintext; Slack control characters and HTML are escaped. Placeholder values are never re-parsed or executed. Limits: 100 templates, 20,000 characters/template, 12 activity blocks, 30 custom placeholders, 10,000 characters/custom value, 2,000,000 characters/rendered custom output.
-- JSON backup v3 includes the template library, report snapshots, and both scopes of custom values. Restore accepts v1, v2, and v3, skips existing report dates and template names, assigns fresh IDs, and commits atomically. Existing size/report limits remain in effect.
+- The legacy QA JSON backup includes the template library, report snapshots, and both scopes of custom values, and remains accepted for compatibility. The user-facing portal backup is now one validated ZIP containing QA data, theme/palettes, and encrypted Vault data.
 
 ### Phase 2 implementation decisions (historical; Phase 3 supersedes the three-step flow)
 
@@ -32,7 +34,7 @@
 - Every activity is a bullet in each applicable export section: a literal bullet in Slack and a hyphen list in Markdown/plaintext. Continuation lines (environment/result, coverage links, multiline issues) are indented under the matching activity. Export changes apply when regenerating old saved reports too, without changing stored report data.
 - "Simpan & ekspor Slack .md" saves before downloading. Dirty input never exports a stale preview. Preview failures after a successful save provide a retry without discarding saved data. Copy/export require neither finalization nor Slack/email settings. The previous delivery/finalization endpoints remain for compatibility, but their UI actions are removed from the daily workflow. Legacy locked reports remain read-only/exportable and can be deleted explicitly.
 - Deleting requires confirmation of the saved title/date/activity count and a matching report version. The report and its activities/coverage links are permanently removed together. Deletion never removes already exported files or messages sent externally.
-- Manual JSON backup contains all QA reports, regardless of list filters or pagination, but excludes accounts, sessions, and secrets. Versioned backup files are limited to 1,000 reports and 10 MiB. Restore validates the entire file, requires confirmation, skips existing dates without overwriting, generates fresh IDs, and commits all new reports atomically. Backup files are not encrypted; there is no scheduled backup or recycle bin.
+- Manual ZIP backup contains all QA reports regardless of list filters or pagination, all report templates, theme/palettes, and encrypted Vault records. Import validates the entire archive and requires an explicit choice between adding only missing records and overwriting the included datasets. PostgreSQL changes commit atomically. The ZIP itself is not encrypted; accounts, sessions, `.env`, HTTP history/collections, and dummy-data presets remain outside its scope. There is no scheduled backup or recycle bin.
 - `sent` means at least one channel confirmed success. Copy/download never marks sent. All report statuses contribute to monthly metrics. Pass rate uses exact `Pass`; custom results stay in the denominator. Repeated entries count additional occurrences of an identical code within the same report/date.
 - Limits: 500 activities/report, 50 coverage links/activity, 10,000 characters/issue. History is server-paginated in pages of 20. Monthly totals are aggregated in SQL; CSV includes all activities and neutralizes spreadsheet formula prefixes.
 
@@ -171,17 +173,17 @@ A `daily_report` (one per date) has many `report_items` (one per ticket/activity
 - A stale report version returns a conflict instead of deleting a report changed in another tab.
 - Successful deletion removes all associated activities and links and refreshes the list. Nothing is posted to or deleted from external services.
 
-### US-8: Back up and restore QA reports
+### US-8: Back up and import portal data
 
-**As a** QA tester, **I want to** download and restore a portable JSON backup, **so that** I can recover reports from a backup made before accidental deletion.
+**As a** QA tester, **I want to** download and import a portable ZIP backup, **so that** I can recover reports, templates, visual preferences, and encrypted Vault data after accidental loss.
 
 **Acceptance Criteria:**
-- An authenticated user can download every QA report, including status, metadata, activities, and coverage links; active filters and pagination do not restrict the backup.
-- The file identifies its format, schema version, and export time. Limits are 1,000 reports and 10 MiB; exceeding a limit returns an error, never a silently truncated backup.
-- Selecting a file does not restore immediately. A confirmation explains that existing dates will be skipped, not overwritten.
-- Invalid JSON, unsupported schema versions, duplicate dates within the file, and invalid report/activity fields are rejected before any report is inserted.
-- Restore inserts missing dates atomically with fresh report/activity IDs, retains saved status and content, and reports restored/skipped counts. Repeating a restore safely skips existing dates.
-- Accounts, credentials, sessions, environment configuration, and external messages are outside the backup scope. Files are unencrypted and should be stored privately.
+- An authenticated user downloads `backup_YYYYMMDD_HHMMSS.zip` containing every QA report and template, browser-supplied theme/palettes, and encrypted Vault data; active filters and pagination do not restrict it.
+- The archive identifies its format, schema version, and export time. It is limited to 100 MiB compressed and 150 MiB uncompressed; exceeding a limit returns an error, never a silently truncated backup.
+- Selecting a ZIP never imports immediately. A preview shows content counts and asks for **Tambahkan yang belum ada** or **Overwrite semua**.
+- Invalid archives, unknown/duplicate files, unsupported schemas, duplicate records, and invalid fields are rejected before mutation.
+- Add-missing mode skips existing report dates, template names, and Vault IDs. Vault merge requires an identical master lock. Overwrite replaces all included datasets, including theme/palettes, and clears Vault unlock sessions.
+- All PostgreSQL changes commit atomically and the UI reports restored/skipped counts. Accounts, sessions, environment configuration, HTTP history/collections, presets, and external messages remain outside scope. ZIP files are not archive-encrypted and must be stored privately; Vault secret values remain ciphertext.
 
 ## 6. Edge Cases
 - Duplicate ticket code logged twice in the same day (e.g., re-tested after a fix): both entries are kept as separate rows; the dashboard should not double-count silently without indicating it's two entries for the same code.

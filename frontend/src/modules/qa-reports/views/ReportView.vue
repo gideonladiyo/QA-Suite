@@ -134,6 +134,11 @@ const payload = computed<ReportSave>(() => ({
         : item.result,
     current_status: item.current_status || null,
     current_issue: item.current_issue || null,
+    ...(item.duration_hours == null ? {} : { duration_hours: item.duration_hours }),
+    ...(item.obstacle ? { obstacle: item.obstacle } : {}),
+    ...(item.next_step ? { next_step: item.next_step } : {}),
+    ...(item.pic_guidance ? { pic_guidance: item.pic_guidance } : {}),
+    ...(item.deliverable ? { deliverable: item.deliverable } : {}),
     ...(templateBody.value || Object.keys(item.template_values ?? {}).length
       ? {
           template_values: Object.fromEntries(
@@ -173,6 +178,11 @@ function blankItem(): EditableItem {
     result: 'In progress',
     current_status: null,
     current_issue: null,
+    duration_hours: null,
+    obstacle: null,
+    next_step: null,
+    pic_guidance: null,
+    deliverable: null,
     template_values: {},
     links: [{ url: '', label: null }],
   }

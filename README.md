@@ -13,7 +13,7 @@ Workspace lokal berbasis Vue 3, Vite, TypeScript, Tailwind CSS, Pinia, dan Vue R
 | 5 | Vault untuk password, secret, catatan, dan command penting | Implemented |
 | 6 | Photo Editor lokal: layer, mask, brush, adjustment, history, dan export | Implemented v1 foundation |
 
-QA Reports menyimpan laporan harian dan seluruh aktivitas ke PostgreSQL dalam satu transaksi. Alur utama: daftar laporan → tambah/buka → isi aktivitas yang bisa dilipat → simpan → salin untuk Slack atau unduh `.md`/`.txt`. Template custom, hapus dengan konfirmasi, backup/pemulihan JSON, HTML, salin dari kemarin, filter, metrik bulanan, dan CSV tersedia. Tidak perlu finalisasi atau konfigurasi pengiriman untuk mengekspor. Micro Tools memiliki empat workspace fungsional. Vault menyimpan password, API key, token, catatan, dan command secara terenkripsi; Supabase Hub masih berupa penjelasan fitur. Halaman `/components` menyediakan demonstrasi komponen dengan data contoh di memori. Preferensi tema, palet warna, dan ID template terakhir disimpan di localStorage, bukan isi laporan; sesi memakai cookie HttpOnly di environment nonlokal.
+QA Reports menyimpan laporan harian dan seluruh aktivitas ke PostgreSQL dalam satu transaksi. Alur utama: daftar laporan → tambah/buka → isi aktivitas yang bisa dilipat → simpan → salin untuk Slack atau unduh `.md`/`.txt`. Template custom, hapus dengan konfirmasi, backup/import ZIP, HTML, salin dari kemarin, filter, metrik bulanan, dan CSV tersedia. Tidak perlu finalisasi atau konfigurasi pengiriman untuk mengekspor. Micro Tools memiliki empat workspace fungsional. Vault menyimpan password, API key, token, catatan, dan command secara terenkripsi; Supabase Hub masih berupa penjelasan fitur. Halaman `/components` menyediakan demonstrasi komponen dengan data contoh di memori. Preferensi tema, palet warna, dan ID template terakhir disimpan di localStorage; backup ZIP menyertakan tema dan palet, sedangkan sesi memakai cookie HttpOnly di environment nonlokal.
 
 Status di atas merujuk source code. Container yang sudah berjalan tidak otomatis memakai perubahan; pembaruan memerlukan build/deploy yang disengaja. Migrasi `0002_micro_tools` menambah tabel riwayat dan preset; `0003_qa_report_templates` menambah template serta salinan format pada laporan tanpa mengubah isi laporan lama; `0006_vault` menambah Master Lock, item terenkripsi, dan log akses Vault.
 
@@ -85,7 +85,7 @@ Bagian **Sesuaikan warna atau impor palet** menyediakan color picker dan kode HE
 
 Preset tambahan memakai kombinasi swatch dari [Material Design 2014](https://m2.material.io/design/color/the-color-system.html), bukan implementasi penuh tema Material. Palet awal berasal dari [Color Hunt](https://colorhunt.co/palette/f8b2b2af719d8b639b403d88). Warna dasar dipertahankan dalam preferensi; turunannya disesuaikan untuk keterbacaan teks/tombol di mode terang maupun gelap. Warna status sukses, peringatan, dan error tetap terpisah.
 
-Palet aktif disimpan di localStorage browser ini (`qa-portal:color-palette`), bukan PostgreSQL atau backup laporan. Bagian **Palet tersimpan** dapat menyimpan hingga 20 palet bernama di `qa-portal:saved-color-palettes`. Klik **Tambah palet**, lalu isi nama serta kode HEX Primary, Secondary, Accent, dan Highlight. Palet dapat dimuat ke preview, diedit lewat form yang sama, atau dihapus tanpa mengubah warna aktif sampai **Terapkan palet** diklik. Tema terang/gelap tetap pengaturan terpisah. Jika penyimpanan ditolak browser, palet aktif masih berlaku selama sesi dengan peringatan, sedangkan daftar palet tidak diubah. Pilih **Portal original → Terapkan palet** untuk menghapus override dan kembali ke token CSS asli. Tidak memerlukan migrasi database atau dependensi baru.
+Palet aktif disimpan di localStorage browser ini (`qa-portal:color-palette`), bukan PostgreSQL. Bagian **Palet tersimpan** dapat menyimpan hingga 20 palet bernama di `qa-portal:saved-color-palettes`. Klik **Tambah palet**, lalu isi nama serta kode HEX Primary, Secondary, Accent, dan Highlight. Palet dapat dimuat ke preview, diedit lewat form yang sama, atau dihapus tanpa mengubah warna aktif sampai **Terapkan palet** diklik. Tema terang/gelap tetap pengaturan terpisah. Backup ZIP membawa tema, palet aktif, dan daftar palet dari browser yang membuat backup. Jika penyimpanan ditolak browser, palet aktif masih berlaku selama sesi dengan peringatan, sedangkan daftar palet tidak diubah. Pilih **Portal original → Terapkan palet** untuk menghapus override dan kembali ke token CSS asli. Tidak memerlukan migrasi database atau dependensi baru.
 
 ## Pemakaian Vault
 
@@ -95,7 +95,7 @@ Palet aktif disimpan di localStorage browser ini (`qa-portal:color-palette`), bu
 4. Gunakan **Salin** untuk menyalin tanpa menampilkan nilai atau **Tampilkan** untuk membuka nilai dan catatan. Aplikasi mencoba membersihkan clipboard setelah 30 detik jika isinya belum diganti, tetapi izin browser dapat membatasi upaya ini.
 5. Vault terkunci otomatis setelah 1–60 menit aktivitas berhenti (default 5 menit), saat tab ditutup, backend dimulai ulang, atau tombol **Kunci sekarang** dipilih. Sesi unlock hanya disimpan di memori.
 
-Pencarian hanya memeriksa judul, username, dan kategori, bukan nilai atau catatan terenkripsi. Filter kategori dan urutan terbaru/alfabetis/tanggal dibuat tersedia. Backup QA Reports tidak mencakup Vault; pemulihan Vault memerlukan backup database utuh dan Master yang benar.
+Pencarian hanya memeriksa judul, username, dan kategori, bukan nilai atau catatan terenkripsi. Filter kategori dan urutan terbaru/alfabetis/tanggal dibuat tersedia. Backup ZIP menyertakan ciphertext, nonce, metadata, master lock, dan audit log Vault sehingga dapat dipulihkan tanpa menaruh nilai rahasia plaintext di dalam arsip. Master PIN/passphrase asli tetap diperlukan untuk membuka Vault hasil pemulihan.
 
 ## Pemakaian QA Reports
 
@@ -161,7 +161,7 @@ Verifikasi signature hanya setelah kamu memilih algoritma yang diharapkan dan me
 
 ### Backup dan pengujian Micro Tools
 
-Backup JSON di QA Reports tetap **khusus laporan**, tidak mencakup riwayat HTTP/preset. Backup seluruh database beserta salinan `.env` yang aman diperlukan untuk memulihkan riwayat dan preset. Jangan menaruh `.env` dalam file backup yang dibagikan.
+Backup ZIP portabel belum mencakup akun, sesi, `.env`, riwayat HTTP, collection HTTP, atau preset Dummy Data. Backup seluruh database beserta salinan `.env` yang aman tetap diperlukan untuk memulihkan bagian tersebut. Jangan menaruh `.env` dalam file backup yang dibagikan.
 
 Tes backend menggunakan mock transport (tidak mengirim ke API sungguhan) untuk timeout, redirect, DNS/IP, header, batas respons, riwayat, dan preset. Tes frontend mencakup konversi, seed, ekspor, JWT HS256/RS256, navigasi, masking, konfirmasi, dan tree ter-virtualisasi. Build/lint/typecheck dapat dilakukan tanpa menjalankan ulang aplikasi utama.
 
@@ -179,13 +179,13 @@ Slack memakai `mrkdwn`: `*tebal*`, `_miring_`, dan backtick untuk kode. Judul da
 
 Hasil paste tidak selalu diformat otomatis oleh editor Slack. Periksa sebelum mengirim dan ikuti [panduan markup Slack](https://slack.com/help/articles/360039953113-Format-your-messages-in-Slack-with-markup).
 
-### Backup dan pemulihan
+### Backup dan import ZIP
 
-Buka **Backup & pemulihan** di bawah daftar. **Unduh backup JSON** mencadangkan seluruh laporan (semua halaman, tanpa mengikuti filter), termasuk aktivitas, coverage, status, dan metadata. Batas versi ini 1.000 laporan / 10 MB; jika melampaui batas, ekspor ditolak secara eksplisit, bukan dipotong diam-diam.
+Buka **Backup & import** di Settings. **Unduh backup ZIP** membuat file `backup_YYYYMMDD_HHMMSS.zip` yang berisi seluruh laporan dan aktivitas, template, tema/palet browser, serta Vault terenkripsi. Setiap laporan disimpan terpisah sebagai `reports/YYYY-MM/YYYY-MM-DD.json`, sedangkan template berada di `reports/templates.json`. Filter dan pagination daftar tidak membatasi isinya. Batas arsip 100 MB terkompresi dan 150 MB setelah diekstrak; arsip yang tidak valid, terenkripsi, berisi file asing, atau tidak kompatibel ditolak sebelum data diubah. File dapat dipilih atau ditarik dan dilepas ke area import.
 
-Pilih file JSON untuk memulihkan, lalu konfirmasi nama file dan jumlah laporan. Seluruh file divalidasi terlebih dahulu. Hanya tanggal yang belum ada yang dipulihkan; tanggal yang sudah ada dilewati tanpa perubahan. Semua penambahan disimpan dalam satu transaksi. ID laporan/aktivitas baru dibuat saat pemulihan; tautan detail lama tidak dipulihkan. Status laporan final/terkirim tetap dipertahankan.
+Sesudah file ZIP dipilih, aplikasi menampilkan jumlah isinya dan meminta pilihan. **Tambahkan yang belum ada** mempertahankan data saat ini, melewati tanggal laporan, nama template, dan ID Vault yang sudah ada. Vault hanya dapat digabung jika memakai master lock yang sama. **Overwrite semua** mengganti seluruh laporan, template, tema/palet, dan Vault dengan isi backup. Perubahan PostgreSQL dilakukan dalam satu transaksi; kegagalan membatalkan seluruh import. Overwrite mengunci ulang Vault dan Master PIN/passphrase dari backup diperlukan untuk membukanya.
 
-Backup ini hanya untuk data QA, bukan akun, password, sesi, `.env`, modul lain, atau salinan penuh volume PostgreSQL. File JSON tidak dienkripsi; simpan salinannya secara aman di luar volume database. Buat backup **sebelum** menghapus laporan. Belum ada backup otomatis/terjadwal atau recycle bin.
+ZIP tidak memakai password atau enkripsi arsip. Nilai rahasia Vault tetap tersimpan sebagai ciphertext, tetapi laporan, template, tema, dan metadata dapat dibaca dari ZIP; simpan file secara aman. Akun, sesi, `.env`, riwayat/collection HTTP, dan preset Dummy Data tidak dicadangkan. Endpoint backup JSON QA lama tetap tersedia hanya untuk kompatibilitas. Belum ada backup otomatis/terjadwal atau recycle bin.
 
 ## Struktur UI
 

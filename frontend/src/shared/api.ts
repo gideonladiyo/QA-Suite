@@ -45,8 +45,8 @@ export async function api<T>(path: string, options?: RequestInit): Promise<T> {
   return result.status === 204 ? (undefined as T) : (result.json() as Promise<T>)
 }
 
-export async function apiFile(path: string): Promise<Blob> {
-  return (await response(path)).blob()
+export async function apiFile(path: string, options?: RequestInit): Promise<Blob> {
+  return (await response(path, options)).blob()
 }
 
 export function errorMessage(error: unknown): string {

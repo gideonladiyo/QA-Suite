@@ -6,6 +6,9 @@ from html import escape
 from typing import Literal
 from uuid import UUID
 
+# openpyxl does not ship type hints.
+from openpyxl import Workbook  # type: ignore[import-untyped]
+from openpyxl.styles import Alignment, Font, PatternFill  # type: ignore[import-untyped]
 from sqlalchemy import distinct, func, select, tuple_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -208,6 +211,11 @@ def apply_items(report: DailyReport, entries: list[ItemInput]) -> None:
         item.result = entry.result
         item.current_status = entry.current_status or entry.result
         item.current_issue = entry.current_issue or None
+        item.duration_hours = entry.duration_hours
+        item.obstacle = entry.obstacle or None
+        item.next_step = entry.next_step or None
+        item.pic_guidance = entry.pic_guidance or None
+        item.deliverable = entry.deliverable or None
         if "template_values" in entry.model_fields_set or not entry.id:
             item.template_values = {
                 key: value for key, value in entry.template_values.items() if key in custom
@@ -531,7 +539,7 @@ async def monthly_csv_rows(db: AsyncSession, month: str) -> list[CsvPreviewRow]:
             select(DailyReport)
             .where(DailyReport.report_date.between(start, end))
             .options(selectinload(DailyReport.items).selectinload(ReportItem.links))
-            .order_by(DailyReport.report_date.desc(), DailyReport.id)
+            .order_by(DailyReport.report_date.asc(), DailyReport.id)
         )
     ).all()
     return [
@@ -545,6 +553,11 @@ async def monthly_csv_rows(db: AsyncSession, month: str) -> list[CsvPreviewRow]:
             current_status=item.current_status or "",
             current_issue=item.current_issue or "",
             coverage_links="\n".join(link.url for link in item.links),
+            duration_hours=item.duration_hours,
+            obstacle=item.obstacle or "",
+            next_step=item.next_step or "",
+            pic_guidance=item.pic_guidance or "",
+            deliverable=item.deliverable or "",
         )
         for report in reports
         for item in report.items
@@ -586,3 +599,62 @@ async def export_csv(db: AsyncSession, month: str) -> str:
             ]
         )
     return "\ufeff" + output.getvalue()
+
+
+async def export_manmonth(db: AsyncSession, month: str) -> bytes:
+    rows = await monthly_csv_rows(db, month)
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Manmonth"
+    sheet.append(
+        [
+            "No",
+            "Tanggal",
+            "Hari",
+            "Durasi Pengerjaan (Hour)",
+            "Ticket / Task Ref",
+            "Task Summary (Progress)",
+            "Kendala (Obstacle)",
+            "Next Step / Action",
+            "PIC / Guidance",
+            "Notion / Reference Link",
+            "Deliverable",
+            "Status",
+        ]
+    )
+    days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
+    for number, row in enumerate(rows, 1):
+        sheet.append(
+            [
+                number,
+                row.date,
+                days[row.date.weekday()],
+                row.duration_hours,
+                csv_cell(row.activity),
+                csv_cell(row.current_issue),
+                csv_cell(row.obstacle),
+                csv_cell(row.next_step),
+                csv_cell(row.pic_guidance),
+                csv_cell(row.coverage_links),
+                csv_cell(row.deliverable),
+                csv_cell(row.current_status),
+            ]
+        )
+    header_fill = PatternFill("solid", fgColor="1F4E78")
+    for cell in sheet[1]:
+        cell.fill = header_fill
+        cell.font = Font(color="FFFFFF", bold=True)
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    widths = [6, 14, 12, 24, 22, 42, 32, 32, 24, 42, 28, 20]
+    for column, width in zip(sheet.columns, widths, strict=True):
+        sheet.column_dimensions[column[0].column_letter].width = width
+    for row in sheet.iter_rows(min_row=2):
+        for cell in row:
+            cell.alignment = Alignment(vertical="top", wrap_text=True)
+        row[1].number_format = "dd mmm yyyy"
+        row[3].number_format = "0.00"
+    sheet.freeze_panes = "A2"
+    sheet.auto_filter.ref = sheet.dimensions
+    output = io.BytesIO()
+    workbook.save(output)
+    return output.getvalue()

@@ -3,7 +3,6 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '../../../shared/composables/useToast'
 import DeleteReportButton from '../components/DeleteReportButton.vue'
-import BackupControls from '../components/BackupControls.vue'
 import { errorMessage } from '../../../shared/api'
 import { qaApi, statusLabel, type ReportPage, type ReportSummary } from '../api'
 import UiButton from '../../../shared/components/ui/UiButton.vue'
@@ -224,6 +223,5 @@ onMounted(load)
         </div>
       </div>
     </section>
-    <BackupControls @restored="load" />
   </div>
 </template>

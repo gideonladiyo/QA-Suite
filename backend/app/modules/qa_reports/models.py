@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import CheckConstraint, Date, DateTime, Float, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -72,6 +72,11 @@ class ReportItem(Base):
     result: Mapped[str] = mapped_column(String(50), index=True)
     current_status: Mapped[str | None] = mapped_column(String(100))
     current_issue: Mapped[str | None] = mapped_column(Text)
+    duration_hours: Mapped[float | None] = mapped_column(Float)
+    obstacle: Mapped[str | None] = mapped_column(Text)
+    next_step: Mapped[str | None] = mapped_column(Text)
+    pic_guidance: Mapped[str | None] = mapped_column(Text)
+    deliverable: Mapped[str | None] = mapped_column(Text)
     template_values: Mapped[dict[str, str]] = mapped_column(
         JSONB, default=dict, server_default="{}"
     )

@@ -33,6 +33,11 @@ class ItemInput(Schema):
     result: str = Field(default="", max_length=50)
     current_status: str | None = Field(default=None, max_length=100)
     current_issue: str | None = Field(default=None, max_length=10000)
+    duration_hours: float | None = Field(default=None, ge=0)
+    obstacle: str | None = Field(default=None, max_length=10000)
+    next_step: str | None = Field(default=None, max_length=10000)
+    pic_guidance: str | None = Field(default=None, max_length=10000)
+    deliverable: str | None = Field(default=None, max_length=10000)
     links: list[LinkInput] = Field(default_factory=list, max_length=50)
     template_values: TemplateValues = Field(default_factory=dict, max_length=30)
 
@@ -140,7 +145,7 @@ class TemplateOutput(TemplateCreate):
 
 class ReportBackup(Schema):
     format: Literal["qa-portal-reports"]
-    schema_version: Literal[1, 2, 3]
+    schema_version: Literal[1, 2, 3, 4]
     exported_at: datetime
     reports: list[BackupReport] = Field(max_length=1000)
     templates: list[TemplateOutput] = Field(default_factory=list, max_length=100)
@@ -211,3 +216,8 @@ class CsvPreviewRow(Schema):
     current_status: str
     current_issue: str
     coverage_links: str
+    duration_hours: float | None
+    obstacle: str
+    next_step: str
+    pic_guidance: str
+    deliverable: str

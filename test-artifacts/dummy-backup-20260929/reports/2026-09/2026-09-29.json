@@ -1,0 +1,38 @@
+{
+  "report_date": "2026-09-29",
+  "title": "Dummy Daily QA Report - Import Test",
+  "author_name": "QA Tester",
+  "template_id": null,
+  "id": "00000000-0000-4000-8000-000000000929",
+  "status": "draft",
+  "version": 1,
+  "items": [
+    {
+      "id": "00000000-0000-4000-8000-000000009291",
+      "activity_code": "DUMMY-20260929",
+      "environment": "Staging",
+      "result": "Pass",
+      "current_status": "Import test completed",
+      "current_issue": "Dummy activity untuk menguji import backup ZIP.",
+      "duration_hours": 1.5,
+      "obstacle": "Tidak ada kendala.",
+      "next_step": "Hapus laporan dummy setelah pengujian selesai.",
+      "pic_guidance": "QA Lead",
+      "deliverable": "Validasi fitur import backup",
+      "links": [
+        {
+          "url": "https://example.com/dummy-coverage-2026-09-29",
+          "label": "Dummy coverage"
+        }
+      ],
+      "template_values": {},
+      "sort_order": 0
+    }
+  ],
+  "slack_sent_at": null,
+  "email_sent_at": null,
+  "updated_at": "2026-09-29T04:30:00Z",
+  "template_name": null,
+  "template_body": null,
+  "template_values": {}
+}

@@ -101,7 +101,7 @@ This is the most security-sensitive module in the portal and should be built and
 - Concurrent access from two tabs → the second tab locks/unlocks independently (session state is per browser session/tab context, not shared), each requiring its own unlock.
 
 ## 7. Future Considerations (out of scope for v1)
-- Printable/exportable encrypted backup file.
+- A standalone printable Vault export. The implemented portal ZIP backup already carries encrypted Vault records and the master-lock metadata needed for restore; it never exports secret plaintext.
 - Browser extension autofill integration.
 - Shared vault entries between multiple local users with per-entry access control.
 - TOTP/2FA secret storage with live code generation.

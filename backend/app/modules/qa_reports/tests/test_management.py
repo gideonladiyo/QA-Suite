@@ -105,7 +105,7 @@ async def test_backup_roundtrip_skip_existing_preserve_locked_and_all_filters(
     assert "attachment" in download.headers["content-disposition"]
     assert "no-store" in download.headers["cache-control"]
     data = download.json()
-    assert data["format"] == "qa-portal-reports" and data["schema_version"] == 3
+    assert data["format"] == "qa-portal-reports" and data["schema_version"] == 4
     assert len(data["reports"]) == 2
     assert "test_dummy_password_only" not in download.text
     assert set(data) == {"format", "schema_version", "exported_at", "reports", "templates"}
@@ -198,7 +198,7 @@ async def test_restore_invalid_file_is_atomic_and_size_limited(client: httpx.Asy
     for body in (
         invalid,
         duplicates,
-        {**original, "schema_version": 4},
+        {**original, "schema_version": 5},
         {**original, "format": "other"},
         {**original, "password": "test_dummy_do_not_echo"},
     ):

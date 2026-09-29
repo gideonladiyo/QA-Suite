@@ -4,6 +4,7 @@ from datetime import date
 
 import httpx
 import pytest
+from openpyxl import load_workbook  # type: ignore[import-untyped]  # No bundled hints.
 
 from app.core.errors import AppError
 from app.modules.qa_reports.models import DailyReport, ReportItem, ReportItemLink
@@ -36,6 +37,17 @@ async def test_daily_input_save_reload_and_exact_export(client: httpx.AsyncClien
                     if index == 0
                     else "Passed on production"
                 ),
+                **(
+                    {
+                        "duration_hours": 1.5,
+                        "obstacle": "Waiting for test data",
+                        "next_step": "Retest the fix",
+                        "pic_guidance": "QA Lead",
+                        "deliverable": "Test evidence",
+                    }
+                    if index == 0
+                    else {}
+                ),
                 "links": [{"url": urls[index]}],
             }
             for index, code in enumerate(codes)
@@ -50,6 +62,16 @@ async def test_daily_input_save_reload_and_exact_export(client: httpx.AsyncClien
     assert [item["activity_code"] for item in reloaded["items"]] == codes
     assert [item["links"][0]["url"] for item in reloaded["items"]] == urls
     assert reloaded["items"][1]["current_status"] == "Passed prod"
+    assert {
+        key: reloaded["items"][0][key]
+        for key in ("duration_hours", "obstacle", "next_step", "pic_guidance", "deliverable")
+    } == {
+        "duration_hours": 1.5,
+        "obstacle": "Waiting for test data",
+        "next_step": "Retest the fix",
+        "pic_guidance": "QA Lead",
+        "deliverable": "Test evidence",
+    }
     preview = (await client.get(path + "/preview")).json()
     expected = f"""Gideon Daily QA Report
 Date: September 1, 2026
@@ -310,6 +332,72 @@ New issue:
     assert (
         await client.post(path + "/send", json={"version": 3, "channel": "slack"})
     ).status_code == 422
+
+
+async def test_manmonth_export_is_chronological_and_maps_report_fields(
+    client: httpx.AsyncClient,
+) -> None:
+    await client.post(
+        "/api/auth/setup", json={"username": "qa_test", "password": "test_dummy_password_only"}
+    )
+    for day, code, duration in ((2, "QA-2", None), (1, "QA-1", 1.5)):
+        response = await client.post(
+            "/api/qa-reports",
+            json={
+                "title": "QA",
+                "report_date": f"2026-09-0{day}",
+                "items": [
+                    {
+                        "activity_code": code,
+                        "result": "Pass",
+                        "duration_hours": duration,
+                        "obstacle": "API belum stabil" if day == 1 else None,
+                        "next_step": "Retest staging" if day == 1 else None,
+                        "pic_guidance": "Backend team" if day == 1 else None,
+                        "deliverable": "Screenshot hasil" if day == 1 else None,
+                        "current_issue": f"Progress {code}",
+                        "current_status": "Done",
+                        "links": [{"url": f"https://example.test/{code}"}],
+                    }
+                ],
+            },
+        )
+        assert response.status_code == 201, response.text
+
+    exported = await client.get("/api/qa-reports/monthly.manmonth.xlsx?month=2026-09")
+    assert exported.status_code == 200
+    assert exported.headers["content-type"].startswith(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    sheet = load_workbook(io.BytesIO(exported.content)).active
+    assert [cell.value for cell in sheet[1]] == [
+        "No",
+        "Tanggal",
+        "Hari",
+        "Durasi Pengerjaan (Hour)",
+        "Ticket / Task Ref",
+        "Task Summary (Progress)",
+        "Kendala (Obstacle)",
+        "Next Step / Action",
+        "PIC / Guidance",
+        "Notion / Reference Link",
+        "Deliverable",
+        "Status",
+    ]
+    assert [sheet.cell(row, 5).value for row in (2, 3)] == ["QA-1", "QA-2"]
+    assert sheet["B2"].value.date() == date(2026, 9, 1)
+    assert sheet["C2"].value == "Selasa"
+    assert sheet["D2"].value == 1.5 and sheet["D3"].value is None
+    assert sheet["F2"].value == "Progress QA-1"
+    assert [sheet.cell(2, column).value for column in (7, 8, 9, 11)] == [
+        "API belum stabil",
+        "Retest staging",
+        "Backend team",
+        "Screenshot hasil",
+    ]
+    assert [sheet.cell(3, column).value for column in (7, 8, 9, 11)] == [None] * 4
+    assert sheet["J2"].value == "https://example.test/QA-1"
+    assert sheet["L2"].value == "Done"
 
 
 async def test_metadata_conflict_item_ownership_and_delete(client: httpx.AsyncClient) -> None:

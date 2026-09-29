@@ -11,9 +11,11 @@ import * as sharedApi from '../../shared/api'
 import { useAuthStore } from '../../shared/stores/auth'
 import AuthGate from '../../shared/components/auth/AuthGate.vue'
 import UiInput from '../../shared/components/ui/UiInput.vue'
+import UiTextarea from '../../shared/components/ui/UiTextarea.vue'
 import ReportPreview from './components/ReportPreview.vue'
 import DeleteReportButton from './components/DeleteReportButton.vue'
-import BackupControls from './components/BackupControls.vue'
+import BackupControls from '../backups/components/BackupControls.vue'
+import { backupApi } from '../backups/api'
 import { qaReportRoutes } from './routes'
 
 const fixture: Report = {
@@ -124,6 +126,8 @@ describe('QA reports', () => {
     const { wrapper } = await reportView(true, true)
     const fields = (label: string) =>
       wrapper.findAllComponents(UiInput).filter((field) => field.props('label') === label)
+    const textareas = (label: string) =>
+      wrapper.findAllComponents(UiTextarea).filter((field) => field.props('label') === label)
     const click = async (name: string) => {
       await wrapper
         .findAll('button')
@@ -139,12 +143,17 @@ describe('QA reports', () => {
     expect(wrapper.get('[aria-current="step"]').text()).toContain('Isian per aktivitas')
     expect(document.activeElement?.textContent).toContain('2. Isian per aktivitas')
     await fields('Activity / kode tiket')[0]!.get('input').setValue('QA-A')
+    await fields('Durasi pengerjaan (jam)')[0]!.get('input').setValue('1.5')
     await click('Tambah aktivitas')
     await fields('Activity / kode tiket')[1]!.get('input').setValue('QA-B')
     await fields('URL coverage 1')[0]!.get('input').setValue('https://example.test/a')
     await fields('URL coverage 1')[1]!.get('input').setValue('https://example.test/b')
-    await wrapper.findAll('textarea')[0]!.setValue('Issue A')
-    await wrapper.findAll('textarea')[1]!.setValue('Issue B')
+    await textareas('Current issues')[0]!.get('textarea').setValue('Issue A')
+    await textareas('Current issues')[1]!.get('textarea').setValue('Issue B')
+    await textareas('Obstacle (manmonth)')[0]!.get('textarea').setValue('Blocked A')
+    await textareas('Next Step / Action (manmonth)')[0]!.get('textarea').setValue('Retry A')
+    await textareas('PIC / Guidance (manmonth)')[0]!.get('textarea').setValue('Lead A')
+    await textareas('Deliverable (manmonth)')[0]!.get('textarea').setValue('Evidence A')
     await fields('Current Status')[0]!.get('input').setValue('Retest A')
     await backStep(wrapper)
     await advance(wrapper)
@@ -152,10 +161,16 @@ describe('QA reports', () => {
     expect(
       fields('URL coverage 1').map((field) => field.get<HTMLInputElement>('input').element.value),
     ).toEqual(['https://example.test/b', 'https://example.test/a'])
-    expect(wrapper.findAll('textarea').map((field) => field.element.value)).toEqual([
-      'Issue B',
-      'Issue A',
-    ])
+    expect(
+      textareas('Current issues').map(
+        (field) => field.get<HTMLTextAreaElement>('textarea').element.value,
+      ),
+    ).toEqual(['Issue B', 'Issue A'])
+    expect(
+      textareas('Obstacle (manmonth)').map(
+        (field) => field.get<HTMLTextAreaElement>('textarea').element.value,
+      ),
+    ).toEqual(['', 'Blocked A'])
     expect(create).not.toHaveBeenCalled()
     await Promise.all([
       wrapper.get('form').trigger('submit'),
@@ -168,10 +183,33 @@ describe('QA reports', () => {
         item.activity_code,
         item.links[0]?.url,
         item.current_issue,
+        item.duration_hours,
+        item.obstacle,
+        item.next_step,
+        item.pic_guidance,
+        item.deliverable,
       ]),
     ).toEqual([
-      ['QA-B', 'https://example.test/b', 'Issue B'],
-      ['QA-A', 'https://example.test/a', 'Issue A'],
+      [
+        'QA-B',
+        'https://example.test/b',
+        'Issue B',
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      ],
+      [
+        'QA-A',
+        'https://example.test/a',
+        'Issue A',
+        1.5,
+        'Blocked A',
+        'Retry A',
+        'Lead A',
+        'Evidence A',
+      ],
     ])
     expect(wrapper.find('form').exists()).toBe(false)
   })
@@ -526,35 +564,62 @@ describe('QA reports', () => {
   })
 
   it('validates backup uploads and waits for confirmation before restoring', async () => {
-    const restore = vi.spyOn(qaApi, 'restore').mockResolvedValue({ restored: 1, skipped: 0 })
-    const wrapper = mount(BackupControls, { attachTo: document.body })
+    const preview = vi.spyOn(backupApi, 'preview').mockResolvedValue({
+      exported_at: '2026-09-29T00:00:00Z',
+      reports: 1,
+      templates: 2,
+      vault_entries: 3,
+      has_theme: true,
+      has_existing_data: true,
+      vault_mergeable: true,
+      existing_reports: 20,
+      existing_templates: 2,
+      existing_vault_entries: 1,
+      new_reports: 1,
+      new_templates: 0,
+      new_vault_entries: 2,
+    })
+    const restore = vi.spyOn(backupApi, 'restore').mockResolvedValue({
+      mode: 'missing',
+      reports_restored: 1,
+      reports_skipped: 0,
+      vault_restored: 3,
+      vault_skipped: 0,
+      theme: { theme: 'dark', color_palette: null, saved_palettes: [] },
+    })
+    const wrapper = mount(BackupControls, {
+      attachTo: document.body,
+      global: { plugins: [createPinia()] },
+    })
+    expect(wrapper.find('details').exists()).toBe(false)
+    expect(wrapper.get('h2').text()).toBe('Backup & import')
     const input = wrapper.find<HTMLInputElement>('input[type=file]')
     Object.defineProperty(input.element, 'files', {
       configurable: true,
-      value: [{ name: 'invalid.json', size: 1, text: async () => '{bad' }],
+      value: [{ name: 'invalid.json', size: 1 }],
     })
     await input.trigger('change')
     await flushPromises()
-    expect(wrapper.text()).toContain('File bukan JSON yang valid.')
+    expect(wrapper.text()).toContain('Pilih file backup ZIP.')
+    expect(preview).not.toHaveBeenCalled()
     expect(restore).not.toHaveBeenCalled()
-    const json = JSON.stringify({
-      format: 'qa-portal-reports',
-      schema_version: 1,
-      reports: [fixture],
+    const archive = { name: 'backup_20260929_120000.zip', size: 10 } as File
+    expect(wrapper.text()).toContain('Drag & drop file ZIP')
+    await wrapper.get('.import-picker').trigger('drop', {
+      dataTransfer: { files: [archive] },
     })
-    Object.defineProperty(input.element, 'files', {
-      configurable: true,
-      value: [{ name: 'backup.json', size: json.length, text: async () => json }],
-    })
-    await input.trigger('change')
     await flushPromises()
-    expect(document.querySelector('dialog')?.textContent).toContain('tidak ditimpa')
+    expect(preview).toHaveBeenCalledExactlyOnceWith(archive)
+    expect(document.querySelector('dialog')?.textContent).toContain('backup_20260929_120000.zip')
+    expect(document.querySelector('dialog')?.textContent).toContain('Perbandingan data')
+    expect(document.querySelector('dialog')?.textContent).toContain('Data baru')
+    expect(document.querySelector('dialog')?.textContent).toContain('Overwrite semua')
     expect(restore).not.toHaveBeenCalled()
     ;[...document.querySelectorAll<HTMLButtonElement>('dialog button')]
-      .find((button) => button.textContent?.trim() === 'Pulihkan laporan')!
+      .find((button) => button.textContent?.trim() === 'Tambahkan yang belum ada')!
       .click()
     await flushPromises()
-    expect(restore).toHaveBeenCalledExactlyOnceWith(json)
+    expect(restore).toHaveBeenCalledExactlyOnceWith(archive, 'missing')
     expect(wrapper.emitted('restored')).toHaveLength(1)
   })
 })

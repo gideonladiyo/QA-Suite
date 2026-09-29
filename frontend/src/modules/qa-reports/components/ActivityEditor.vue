@@ -238,6 +238,51 @@ function selectResult(value: string): void {
           @update:model-value="updateCustom(field, $event)"
         />
       </div>
+      <section class="manmonth-fields activity-long-field">
+        <div>
+          <h3>Detail manmonth</h3>
+          <p class="small muted">Semua field opsional dan tidak muncul di daily report.</p>
+        </div>
+        <div class="qa-form-grid">
+          <UiInput
+            :model-value="item.duration_hours?.toString() ?? ''"
+            label="Durasi pengerjaan (jam)"
+            type="number"
+            min="0"
+            step="0.25"
+            hint="Contoh: 1.5"
+            @update:model-value="item.duration_hours = $event === '' ? null : Number($event)"
+          />
+          <UiTextarea
+            :model-value="item.obstacle ?? ''"
+            label="Obstacle (manmonth)"
+            :rows="3"
+            maxlength="10000"
+            @update:model-value="item.obstacle = $event || null"
+          />
+          <UiTextarea
+            :model-value="item.next_step ?? ''"
+            label="Next Step / Action (manmonth)"
+            :rows="3"
+            maxlength="10000"
+            @update:model-value="item.next_step = $event || null"
+          />
+          <UiTextarea
+            :model-value="item.pic_guidance ?? ''"
+            label="PIC / Guidance (manmonth)"
+            :rows="3"
+            maxlength="10000"
+            @update:model-value="item.pic_guidance = $event || null"
+          />
+          <UiTextarea
+            :model-value="item.deliverable ?? ''"
+            label="Deliverable (manmonth)"
+            :rows="3"
+            maxlength="10000"
+            @update:model-value="item.deliverable = $event || null"
+          />
+        </div>
+      </section>
     </div>
   </fieldset>
 </template>
@@ -268,6 +313,15 @@ legend {
 }
 .activity-long-field {
   grid-column: 1 / -1;
+}
+.manmonth-fields {
+  display: grid;
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+.manmonth-fields h3 {
+  font-size: 14px;
 }
 .activity-toggle {
   min-width: 0;

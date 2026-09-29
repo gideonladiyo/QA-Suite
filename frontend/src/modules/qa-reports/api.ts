@@ -10,6 +10,11 @@ export interface ItemInput {
   result: string
   current_status: string | null
   current_issue: string | null
+  duration_hours?: number | null
+  obstacle?: string | null
+  next_step?: string | null
+  pic_guidance?: string | null
+  deliverable?: string | null
   links: CoverageLink[]
   template_values?: Record<string, string>
 }
@@ -83,6 +88,11 @@ export interface CsvPreviewRow {
   current_status: string
   current_issue: string
   coverage_links: string
+  duration_hours: number | null
+  obstacle: string
+  next_step: string
+  pic_guidance: string
+  deliverable: string
 }
 const base = '/qa-reports'
 export const qaApi = {
@@ -122,6 +132,8 @@ export const qaApi = {
     api(`${base}/monthly?${new URLSearchParams({ month })}`),
   csv: (month: string): Promise<Blob> =>
     apiFile(`${base}/monthly.csv?${new URLSearchParams({ month })}`),
+  manmonth: (month: string): Promise<Blob> =>
+    apiFile(`${base}/monthly.manmonth.xlsx?${new URLSearchParams({ month })}`),
   csvRows: (month: string): Promise<CsvPreviewRow[]> =>
     api(`${base}/monthly/rows?${new URLSearchParams({ month })}`),
   deliveryOptions: (): Promise<{ slack: boolean; email: boolean }> =>

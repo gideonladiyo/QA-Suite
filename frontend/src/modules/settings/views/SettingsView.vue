@@ -5,6 +5,7 @@ import type { ThemePreference } from '../../../shared/stores/ui'
 import UiCard from '../../../shared/components/ui/UiCard.vue'
 import UiErrorState from '../../../shared/components/ui/UiErrorState.vue'
 import UiButton from '../../../shared/components/ui/UiButton.vue'
+import BackupControls from '../../backups/components/BackupControls.vue'
 import WorkspacePalette from '../components/WorkspacePalette.vue'
 import { ref } from 'vue'
 import { useAuthStore } from '../../../shared/stores/auth'
@@ -123,6 +124,7 @@ const themes: { value: ThemePreference; label: string; description: string; icon
       </p>
     </section>
     <WorkspacePalette class="settings-section" />
+    <BackupControls />
     <section class="settings-section">
       <h2>Komponen yang konsisten</h2>
       <p class="muted small mt-2">
